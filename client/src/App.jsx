@@ -7,13 +7,46 @@ import StateView from './components/StateView';
 import DeputadosView from './components/DeputadosView';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
+function getPageFromLocation() {
+  if (typeof window === 'undefined') return 'presidente';
+  const path = window.location.pathname.toLowerCase();
+  const search = new URLSearchParams(window.location.search);
+  const pageParam = (search.get('page') || search.get('pagina') || '').toLowerCase();
+  const hash = window.location.hash.toLowerCase();
+
+  if (path.includes('deputado') || pageParam.includes('deputado') || hash.includes('deputado')) {
+    return 'deputados';
+  }
+  return 'presidente';
+}
+
 export default function App() {
-  const [activePage, setActivePage] = useState('presidente'); // 'presidente' | 'deputados'
+  const [activePage, setActivePage] = useState(getPageFromLocation);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState('regiao'); // 'regiao' | 'estado'
   const [targetUf, setTargetUf] = useState(null);
+
+  // Escutar botões de Voltar / Avançar do navegador
+  useEffect(() => {
+    const handlePopState = () => {
+      setActivePage(getPageFromLocation());
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const handlePageChange = (newPage) => {
+    if (newPage === activePage) return;
+    setActivePage(newPage);
+    if (newPage === 'deputados') {
+      const search = window.location.search;
+      window.history.pushState({ page: 'deputados' }, '', `/deputados${search}`);
+    } else {
+      window.history.pushState({ page: 'presidente' }, '', '/');
+    }
+  };
 
   // Controles de Auto-Refresh
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -90,7 +123,7 @@ export default function App() {
       {/* Barra de Navegação Superior */}
       <HeaderNav
         activePage={activePage}
-        onChangePage={(page) => setActivePage(page)}
+        onChangePage={handlePageChange}
         viewMode={viewMode}
         onChangeViewMode={(mode) => {
           setViewMode(mode);

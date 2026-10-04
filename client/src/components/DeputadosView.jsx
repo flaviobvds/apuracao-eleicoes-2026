@@ -49,13 +49,54 @@ const UF_NAMES = {
   TO: 'Tocantins'
 };
 
+function getInitialFilters() {
+  if (typeof window === 'undefined') return { uf: 'AC', cargo: 'federal' };
+  const searchParams = new URLSearchParams(window.location.search);
+  const paramUf = (searchParams.get('uf') || '').toUpperCase();
+  const paramCargo = (searchParams.get('cargo') || '').toLowerCase();
+
+  const validUf = UFS.includes(paramUf) ? paramUf : 'AC';
+  const validCargo = (paramCargo === 'estadual' || paramCargo === 'federal') ? paramCargo : 'federal';
+
+  return { uf: validUf, cargo: validCargo };
+}
+
 export default function DeputadosView() {
-  const [cargo, setCargo] = useState('federal'); // 'federal' | 'estadual'
-  const [selectedUf, setSelectedUf] = useState('AC');
+  const initial = getInitialFilters();
+  const [cargo, setCargo] = useState(initial.cargo); // 'federal' | 'estadual'
+  const [selectedUf, setSelectedUf] = useState(initial.uf);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedPartidos, setExpandedPartidos] = useState(new Set());
+
+  // Manter parâmetros da URL em sincronia para permitir compartilhamento direto de link
+  const updateUrlParams = useCallback((newUf, newCargo) => {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    url.searchParams.set('uf', newUf);
+    url.searchParams.set('cargo', newCargo);
+    // Se estiver em rota SPA de deputados, assegura o pathname correto
+    if (!url.pathname.includes('deputados') && !url.searchParams.has('page') && !url.searchParams.has('pagina')) {
+      url.pathname = '/deputados';
+    }
+    window.history.replaceState(null, '', url.pathname + url.search);
+  }, []);
+
+  useEffect(() => {
+    updateUrlParams(selectedUf, cargo);
+  }, [selectedUf, cargo, updateUrlParams]);
+
+  // Escutar navegação de histórico (voltar/avançar) dentro da página
+  useEffect(() => {
+    const handlePopState = () => {
+      const current = getInitialFilters();
+      setSelectedUf(current.uf);
+      setCargo(current.cargo);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Buscar dados da API
   const fetchDeputados = useCallback(async () => {
