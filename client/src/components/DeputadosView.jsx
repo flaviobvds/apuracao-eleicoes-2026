@@ -19,9 +19,39 @@ const UFS = [
   'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO'
 ];
 
+const UF_NAMES = {
+  AC: 'Acre',
+  AL: 'Alagoas',
+  AM: 'Amazonas',
+  AP: 'Amapá',
+  BA: 'Bahia',
+  CE: 'Ceará',
+  DF: 'Distrito Federal',
+  ES: 'Espírito Santo',
+  GO: 'Goiás',
+  MA: 'Maranhão',
+  MG: 'Minas Gerais',
+  MS: 'Mato Grosso do Sul',
+  MT: 'Mato Grosso',
+  PA: 'Pará',
+  PB: 'Paraíba',
+  PE: 'Pernambuco',
+  PI: 'Piauí',
+  PR: 'Paraná',
+  RJ: 'Rio de Janeiro',
+  RN: 'Rio Grande do Norte',
+  RO: 'Rondônia',
+  RR: 'Roraima',
+  RS: 'Rio Grande do Sul',
+  SC: 'Santa Catarina',
+  SE: 'Sergipe',
+  SP: 'São Paulo',
+  TO: 'Tocantins'
+};
+
 export default function DeputadosView() {
   const [cargo, setCargo] = useState('federal'); // 'federal' | 'estadual'
-  const [selectedUf, setSelectedUf] = useState('SP');
+  const [selectedUf, setSelectedUf] = useState('AC');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -124,8 +154,8 @@ export default function DeputadosView() {
               className="bg-slate-900 border border-slate-700 text-white font-bold text-sm rounded-xl px-3.5 py-2 focus:outline-none focus:border-indigo-500 cursor-pointer shadow-inner"
             >
               {UFS.map((uf) => (
-                <option key={uf} value={uf} className="bg-slate-900 font-bold">
-                  {uf}
+                <option key={uf} value={uf} className="bg-slate-900 font-medium">
+                  {uf} — {UF_NAMES[uf]}
                 </option>
               ))}
             </select>
