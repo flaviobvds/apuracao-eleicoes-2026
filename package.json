@@ -1,0 +1,28 @@
+{
+  "name": "apuracao-eleicoes-2026",
+  "version": "1.0.0",
+  "description": "Acompanhamento e Projeção 100% de Urnas das Eleições Presidenciais 2026",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js",
+    "build": "npm --prefix client install && npm --prefix client run build",
+    "client:dev": "npm --prefix client run dev",
+    "test": "node server/test_projection.js"
+  },
+  "keywords": [
+    "apuracao",
+    "tse",
+    "eleicoes-2026",
+    "presidente",
+    "urnas",
+    "projecao"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  }
+}
