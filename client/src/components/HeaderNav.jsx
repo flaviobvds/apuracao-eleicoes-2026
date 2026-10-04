@@ -46,7 +46,7 @@ export default function HeaderNav({
           <div className="flex items-center bg-slate-800/90 p-1 rounded-xl border border-slate-700/80 shadow-inner">
             <button
               onClick={() => onChangeViewMode('regiao')}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                 viewMode === 'regiao'
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
                   : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
@@ -57,7 +57,7 @@ export default function HeaderNav({
             </button>
             <button
               onClick={() => onChangeViewMode('estado')}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                 viewMode === 'estado'
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
                   : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
@@ -83,7 +83,7 @@ export default function HeaderNav({
             <div className="flex items-center gap-1.5 bg-slate-800/80 border border-slate-700 rounded-xl px-2.5 py-1 text-xs">
               <button
                 onClick={onToggleAutoRefresh}
-                className={`flex items-center gap-1 font-semibold transition-colors ${
+                className={`flex items-center gap-1 font-semibold transition-colors cursor-pointer ${
                   autoRefresh ? 'text-emerald-400' : 'text-slate-400'
                 }`}
                 title={autoRefresh ? 'Pausar auto-atualização' : 'Ativar auto-atualização'}
@@ -113,7 +113,7 @@ export default function HeaderNav({
             <button
               onClick={onManualRefresh}
               disabled={isRefreshing}
-              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition-all disabled:opacity-50"
+              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition-all disabled:opacity-50 cursor-pointer"
               title="Atualizar dados agora"
             >
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-indigo-400' : ''}`} />

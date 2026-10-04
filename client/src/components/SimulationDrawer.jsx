@@ -28,12 +28,9 @@ export default function SimulationDrawer({
               <Sliders className="w-4 h-4" />
             </span>
             <div>
-              <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                Painel de Controle Eleitoral 2026
+              <h4 className="text-sm font-bold text-white">
+                Controles & Simulação
               </h4>
-              <p className="text-xs text-slate-400">
-                Somente candidatos à Presidência da República
-              </p>
             </div>
           </div>
 
@@ -41,7 +38,7 @@ export default function SimulationDrawer({
           <div className="flex items-center bg-slate-900 p-1 rounded-xl border border-slate-700/80">
             <button
               onClick={() => onSelectRound('1')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 roundMode === '1'
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
@@ -52,7 +49,7 @@ export default function SimulationDrawer({
             </button>
             <button
               onClick={() => onSelectRound('2')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 roundMode === '2'
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
@@ -67,7 +64,7 @@ export default function SimulationDrawer({
           <div className="flex items-center bg-slate-900 p-1 rounded-xl border border-slate-700/80">
             <button
               onClick={() => onToggleSource('simulacao')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
                 source === 'simulacao'
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
@@ -78,7 +75,7 @@ export default function SimulationDrawer({
             </button>
             <button
               onClick={() => onToggleSource('tse')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
                 source === 'tse'
                   ? 'bg-emerald-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
@@ -102,7 +99,7 @@ export default function SimulationDrawer({
             {/* Botão Ver Candidatos Presidenciais */}
             <button
               onClick={() => setShowCandidatesModal(true)}
-              className="px-3 py-1.5 bg-slate-900 hover:bg-slate-700/80 border border-slate-700 text-slate-200 hover:text-white rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5"
+              className="px-3 py-1.5 bg-slate-900 hover:bg-slate-700/80 border border-slate-700 text-slate-200 hover:text-white rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <Users className="w-3.5 h-3.5 text-indigo-400" />
               Presidenciáveis ({activeCandidates.length})
@@ -124,7 +121,7 @@ export default function SimulationDrawer({
             {/* Avançar Urnas Manualmente */}
             <button
               onClick={() => onAdvanceStep(0.02)}
-              className="px-3 py-1.5 bg-slate-900 hover:bg-slate-700/80 border border-slate-700 text-slate-200 hover:text-white rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5"
+              className="px-3 py-1.5 bg-slate-900 hover:bg-slate-700/80 border border-slate-700 text-slate-200 hover:text-white rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
               title="Avança aproximadamente +2% nas urnas de todas as regiões"
             >
               <FastForward className="w-3.5 h-3.5 text-indigo-400" />
@@ -134,7 +131,7 @@ export default function SimulationDrawer({
             {/* Play/Pause Auto-Avanço */}
             <button
               onClick={onToggleAutoAdvance}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 border ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 border cursor-pointer ${
                 isAutoAdvancing
                   ? 'bg-amber-600/20 text-amber-300 border-amber-600/40 hover:bg-amber-600/30'
                   : 'bg-emerald-600/20 text-emerald-300 border-emerald-600/40 hover:bg-emerald-600/30'

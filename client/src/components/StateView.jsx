@@ -134,43 +134,44 @@ export default function StateView({ estados, initialUfFilter = null }) {
                   : 'border-slate-700/80 hover:border-slate-600'
               }`}
             >
-              {/* Linha Principal do Estado */}
+              {/* Linha Principal do Estado com Grid Perfeitamente Alinhado */}
               <div
                 onClick={() => toggleExpand(st.uf)}
-                className="p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer hover:bg-slate-700/20"
+                className="p-3.5 sm:p-4 grid grid-cols-1 md:grid-cols-[240px_1fr_210px] items-center gap-4 cursor-pointer hover:bg-slate-700/20 select-none transition-colors"
               >
-                {/* Identificação do Estado */}
-                <div className="flex items-center gap-3 min-w-[200px]">
-                  <div className="w-11 h-11 rounded-xl bg-slate-900 border border-slate-700 flex flex-col items-center justify-center font-bold text-white shadow-sm shrink-0">
-                    <span className="text-xs text-slate-400 font-mono leading-none">UF</span>
+                {/* Coluna 1: Identificação do Estado (Largura Fixa) */}
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-700 flex flex-col items-center justify-center font-bold text-white shadow-sm shrink-0">
+                    <span className="text-[10px] text-slate-400 font-mono leading-none">UF</span>
                     <span className="text-sm font-extrabold text-indigo-400 leading-tight">{st.uf}</span>
                   </div>
-                  <div>
-                    <h4 className="font-bold text-slate-100 text-sm sm:text-base flex items-center gap-2">
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-slate-100 text-sm sm:text-base flex items-center gap-2 truncate">
                       {st.name}
-                      <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-700">
+                      <span className="text-[10px] uppercase font-semibold px-1.5 py-0.2 rounded bg-slate-900 text-slate-400 border border-slate-700 shrink-0">
                         {st.region}
                       </span>
                     </h4>
-                    <span className="text-xs text-slate-400 font-mono">
+                    <span className="text-xs text-slate-400 font-mono block truncate">
                       {st.urnasTotal.toLocaleString('pt-BR')} urnas no total
                     </span>
                   </div>
                 </div>
 
-                {/* Bloco de Urnas Apuradas vs Restantes */}
-                <div className="flex-1 max-w-md px-0 sm:px-4">
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-emerald-400 font-medium flex items-center gap-1 font-mono">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      {st.percentualApurado.toFixed(1)}% ({st.urnasApuradas.toLocaleString('pt-BR')})
+                {/* Coluna 2: Bloco Central de Urnas (Perfeitamente Alinhado em Todas as Linhas) */}
+                <div className="w-full min-w-0">
+                  <div className="flex justify-between text-xs mb-1.5 font-mono">
+                    <span className="text-emerald-400 font-medium flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                      <span>{st.percentualApurado.toFixed(1)}%</span>
+                      <span className="text-slate-400 font-normal hidden sm:inline">({st.urnasApuradas.toLocaleString('pt-BR')})</span>
                     </span>
-                    <span className="text-amber-400 font-medium flex items-center gap-1 font-mono">
-                      <Clock className="w-3.5 h-3.5" />
-                      Faltam {st.urnasRestantes.toLocaleString('pt-BR')} urnas
+                    <span className="text-amber-400 font-medium flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 shrink-0" />
+                      <span>Faltam {st.urnasRestantes.toLocaleString('pt-BR')} urnas</span>
                     </span>
                   </div>
-                  <div className="w-full bg-slate-700/70 rounded-full h-2.5 overflow-hidden flex">
+                  <div className="w-full bg-slate-700/70 rounded-full h-2.5 overflow-hidden flex shadow-inner">
                     <div
                       className="bg-emerald-500 transition-all duration-500 rounded-l-full"
                       style={{ width: `${Math.min(100, Math.max(0, st.percentualApurado))}%` }}
@@ -182,19 +183,19 @@ export default function StateView({ estados, initialUfFilter = null }) {
                   </div>
                 </div>
 
-                {/* Líder no Estado e Botão Expandir */}
-                <div className="flex items-center justify-between sm:justify-end gap-4 min-w-[200px]">
+                {/* Coluna 3: Líder no Estado e Botão Expandir (Largura Fixa) */}
+                <div className="flex items-center justify-between md:justify-end gap-3 min-w-0">
                   {lider && (
-                    <div className="text-left sm:text-right">
-                      <div className="flex items-center sm:justify-end gap-1.5">
+                    <div className="text-left md:text-right min-w-0">
+                      <div className="flex items-center md:justify-end gap-1.5">
                         <span 
                           className="w-2.5 h-2.5 rounded-full shrink-0" 
                           style={{ backgroundColor: lider.color }} 
                         />
-                        <span className="text-xs font-bold text-slate-100">
+                        <span className="text-xs font-bold text-slate-100 truncate">
                           {lider.name}
                         </span>
-                        <span className="text-xs font-mono font-bold text-emerald-400">
+                        <span className="text-xs font-mono font-bold text-emerald-400 shrink-0">
                           {lider.percentualAtual.toFixed(1)}%
                         </span>
                       </div>
@@ -204,7 +205,10 @@ export default function StateView({ estados, initialUfFilter = null }) {
                     </div>
                   )}
 
-                  <button className="p-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-400 hover:text-white transition-colors">
+                  <button 
+                    className="p-1.5 rounded-lg bg-slate-900 border border-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0"
+                    aria-label="Expandir detalhes"
+                  >
                     {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </button>
                 </div>

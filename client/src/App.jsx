@@ -211,8 +211,7 @@ export default function App() {
             apuradas={data.nacional.urnasApuradas}
             restantes={data.nacional.urnasRestantes}
             percentual={data.nacional.percentualApurado}
-            title="Totalização Nacional de Seções Eleitorais (Urnas Eletrônicas)"
-            subtitle="Brasil + Exterior — Base oficial com 534.671 urnas mapeadas"
+            title="Apuração Nacional das Urnas"
           />
         )}
 
