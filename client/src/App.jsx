@@ -4,9 +4,11 @@ import UrnasBar from './components/UrnasBar';
 import NationalScoreboard from './components/NationalScoreboard';
 import RegionView from './components/RegionView';
 import StateView from './components/StateView';
+import DeputadosView from './components/DeputadosView';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function App() {
+  const [activePage, setActivePage] = useState('presidente'); // 'presidente' | 'deputados'
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -46,7 +48,7 @@ export default function App() {
 
   // Ciclo de contagem regressiva para Auto-Refresh
   useEffect(() => {
-    if (!autoRefresh) return;
+    if (!autoRefresh || activePage !== 'presidente') return;
 
     const timer = setInterval(() => {
       setCountdown((prev) => {
@@ -59,7 +61,7 @@ export default function App() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [autoRefresh, refreshInterval, fetchData]);
+  }, [autoRefresh, refreshInterval, fetchData, activePage]);
 
   const handleSelectStateFromRegion = (uf) => {
     setTargetUf(uf);
@@ -87,6 +89,8 @@ export default function App() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       {/* Barra de Navegação Superior */}
       <HeaderNav
+        activePage={activePage}
+        onChangePage={(page) => setActivePage(page)}
         viewMode={viewMode}
         onChangeViewMode={(mode) => {
           setViewMode(mode);
@@ -114,34 +118,42 @@ export default function App() {
           </div>
         )}
 
-        {/* 1. Barra Nacional de Urnas (Foco Central: Urnas Apuradas vs Restantes) */}
-        {data?.nacional && (
-          <UrnasBar
-            total={data.nacional.urnasTotal}
-            apuradas={data.nacional.urnasApuradas}
-            restantes={data.nacional.urnasRestantes}
-            percentual={data.nacional.percentualApurado}
-            title="Apuração Nacional das Urnas"
-          />
-        )}
+        {/* Renderização Condicional da Página Selecionada */}
+        {activePage === 'presidente' ? (
+          <>
+            {/* 1. Barra Nacional de Urnas (Foco Central: Urnas Apuradas vs Restantes) */}
+            {data?.nacional && (
+              <UrnasBar
+                total={data.nacional.urnasTotal}
+                apuradas={data.nacional.urnasApuradas}
+                restantes={data.nacional.urnasRestantes}
+                percentual={data.nacional.percentualApurado}
+                title="Apuração Nacional das Urnas"
+              />
+            )}
 
-        {/* 2. Placar Nacional: Resultado Parcial Atual vs Projeção Final 100% */}
-        <NationalScoreboard
-          nacional={data?.nacional}
-          lastUpdated={data?.lastUpdated}
-        />
+            {/* 2. Placar Nacional: Resultado Parcial Atual vs Projeção Final 100% */}
+            <NationalScoreboard
+              nacional={data?.nacional}
+              lastUpdated={data?.lastUpdated}
+            />
 
-        {/* 3. Conteúdo Alternável: Visão por Região vs Visão por Estado */}
-        {viewMode === 'regiao' ? (
-          <RegionView
-            regioes={data?.regioes}
-            onSelectState={handleSelectStateFromRegion}
-          />
+            {/* 3. Conteúdo Alternável: Visão por Região vs Visão por Estado */}
+            {viewMode === 'regiao' ? (
+              <RegionView
+                regioes={data?.regioes}
+                onSelectState={handleSelectStateFromRegion}
+              />
+            ) : (
+              <StateView
+                estados={data?.estados}
+                initialUfFilter={targetUf}
+              />
+            )}
+          </>
         ) : (
-          <StateView
-            estados={data?.estados}
-            initialUfFilter={targetUf}
-          />
+          /* PÁGINA DE DEPUTADOS FEDERAIS E ESTADUAIS */
+          <DeputadosView />
         )}
       </main>
 
@@ -150,14 +162,18 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div>
             <p className="font-semibold text-slate-300">
-              Projeção 100% dos Votos Válidos (1º Turno)
+              {activePage === 'presidente' 
+                ? 'Projeção 100% dos Votos Válidos (Presidente)'
+                : 'Cálculo Proporcional do TSE (Deputados Federais e Estaduais)'}
             </p>
             <p className="mt-0.5 text-slate-400">
-              Cálculo baseado nos dados oficiais do TSE aplicados às seções eleitorais restantes de cada localidade.
+              {activePage === 'presidente'
+                ? 'Cálculo baseado nos dados oficiais do TSE aplicados às seções eleitorais restantes de cada localidade.'
+                : 'Aplicação das regras do Código Eleitoral: Quociente Eleitoral (QE), Quociente Partidário (QP) e Sobras D\'Hondt.'}
             </p>
           </div>
           <div className="text-right text-slate-400">
-            <span>Eleições Gerais 2026 • Presidente da República</span>
+            <span>Eleições Gerais 2026 • Dados Oficiais TSE</span>
           </div>
         </div>
       </footer>

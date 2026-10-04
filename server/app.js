@@ -148,7 +148,32 @@ app.post('/api/config/source', (req, res) => {
     return res.status(400).json({ success: false, message: 'Fonte inválida' });
   }
   activeSource = source;
-  res.json({ success: true, source: activeSource });
+});
+
+const { fetchDeputadosUf } = require('./services/tseDeputadosService');
+const { VAGAS_DEPUTADO_FEDERAL } = require('./data/deputadosSeatsData');
+
+/**
+ * Rota de Deputados: Retorna o cálculo proporcional de vagas, bancadas e eleitos/suplentes por UF
+ */
+app.get('/api/deputados', async (req, res) => {
+  try {
+    const uf = (req.query.uf || 'SP').toUpperCase();
+    const cargo = (req.query.cargo || 'federal').toLowerCase();
+
+    if (!VAGAS_DEPUTADO_FEDERAL[uf]) {
+      return res.status(400).json({ success: false, message: `UF inválida: ${uf}` });
+    }
+    if (cargo !== 'federal' && cargo !== 'estadual') {
+      return res.status(400).json({ success: false, message: `Cargo inválido. Use 'federal' ou 'estadual'.` });
+    }
+
+    const data = await fetchDeputadosUf(uf, cargo);
+    res.json(data);
+  } catch (error) {
+    console.error('Erro ao buscar deputados:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 // Servir arquivos estáticos do frontend em produção se compilado
