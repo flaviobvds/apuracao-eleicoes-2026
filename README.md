@@ -2,6 +2,11 @@
 
 Aplicação web interativa para acompanhamento em tempo real da apuração das **Eleições Gerais de 2026**, conectada aos dados oficiais do Tribunal Superior Eleitoral (TSE).
 
+> 🌐 **Aplicação Online no Vercel**:  
+> 👉 **[https://projecao-eleicoes-2026.vercel.app/](https://projecao-eleicoes-2026.vercel.app/)**  
+> 👥 **Acesso Direto à Página de Deputados**:  
+> 👉 **[https://projecao-eleicoes-2026.vercel.app/deputados](https://projecao-eleicoes-2026.vercel.app/deputados)**
+
 A plataforma oferece duas frentes principais:
 1. **Presidente da República**: Foco na dinâmica de **Urnas Apuradas vs. Restantes** e na **Projeção Matemática a 100% dos Votos Válidos**.
 2. **Deputados Federais, Estaduais e Distritais**: Cálculo exato da **distribuição de vagas proporcionais por partido/federação** segundo o Código Eleitoral brasileiro (Quociente Eleitoral, Quociente Partidário e Sobras D'Hondt).
@@ -48,12 +53,12 @@ A plataforma oferece duas frentes principais:
 
 ### 3. 🔗 Roteamento SPA & Compartilhamento por Link Direto
 - **Links Diretos sem Erro 404**:
-  - Acesso direto à rota `/deputados` e à página inicial `/`.
+  - Acesso direto à rota [`/deputados`](https://projecao-eleicoes-2026.vercel.app/deputados) e à página inicial [`/`](https://projecao-eleicoes-2026.vercel.app/).
 - **Filtros Sincronizados na URL**:
   - Ao alternar entre estados ou cargos, os parâmetros da URL são atualizados automaticamente via `history.replaceState`:
-    - `https://.../deputados?uf=SP&cargo=federal`
-    - `https://.../deputados?uf=RJ&cargo=estadual`
-    - `https://.../deputados?uf=DF&cargo=estadual`
+    - `https://projecao-eleicoes-2026.vercel.app/deputados?uf=SP&cargo=federal`
+    - `https://projecao-eleicoes-2026.vercel.app/deputados?uf=RJ&cargo=estadual`
+    - `https://projecao-eleicoes-2026.vercel.app/deputados?uf=DF&cargo=estadual`
   - Permite copiar o link da barra do navegador e compartilhar exatamente a mesma visão com outros usuários.
 - **Navegação Fluida no Navegador**:
   - Suporte completo aos botões "Voltar" e "Avançar" (`popstate`).
@@ -155,10 +160,10 @@ Acesse: 👉 **[http://localhost:5173](http://localhost:5173)**
 
 ## 📡 Endpoints da API
 
-| Método | Endpoint | Descrição |
+| Método | Endpoint | Descrição Exemplo Online |
 |---|---|---|
-| `GET` | `/api/apuracao` | Retorna apuração presidencial consolidada, projeção 100%, totais de urnas e status da conexão com o TSE. |
-| `GET` | `/api/deputados?uf={UF}&cargo={federal\|estadual}` | Retorna o cálculo proporcional de vagas, QE, QP, bancadas e lista de eleitos/suplentes da UF informada. |
+| `GET` | `/api/apuracao` | [Exemplo no ar](https://projecao-eleicoes-2026.vercel.app/api/apuracao): Retorna apuração presidencial consolidada, projeção 100%, totais de urnas e status da conexão com o TSE. |
+| `GET` | `/api/deputados?uf={UF}&cargo={federal\|estadual}` | [Exemplo SP Federal](https://projecao-eleicoes-2026.vercel.app/api/deputados?uf=SP&cargo=federal): Retorna o cálculo proporcional de vagas, QE, QP, bancadas e lista de eleitos/suplentes da UF informada. |
 
 ---
 
