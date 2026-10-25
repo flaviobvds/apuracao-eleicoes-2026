@@ -1,5 +1,7 @@
 // Utilitários compartilhados da página "Segundo Turno":
-// formatação pt-BR, leitura defensiva da Corrida e cores dos candidatos.
+// formatação no locale do idioma atual (pt-BR ou en-US), leitura defensiva da Corrida e cores dos candidatos.
+
+import { localeAtual, idiomaDoModulo, tr } from '../../i18n/estado';
 
 export const UF_NOMES = {
   ac: 'Acre', al: 'Alagoas', am: 'Amazonas', ap: 'Amapá', ba: 'Bahia', ce: 'Ceará',
@@ -11,10 +13,11 @@ export const UF_NOMES = {
   zz: 'Exterior', br: 'Brasil',
 };
 
+// Rótulos como getters: seguem o idioma atual sem mudar quem lê m.label / m.curto.
 export const METRICAS = [
-  { key: 'oficial', curto: 'Oficial', label: 'Apurado (TSE)' },
-  { key: 'metrica1', curto: 'M1', label: 'Métrica 1 · Proporção do 1º turno' },
-  { key: 'metrica2', curto: 'M2', label: 'Métrica 2 · Tempo real' },
+  { key: 'oficial', get curto() { return tr('metrica.oficial.curto'); }, get label() { return tr('metrica.oficial'); } },
+  { key: 'metrica1', get curto() { return tr('metrica.m1.curto'); }, get label() { return tr('metrica.m1'); } },
+  { key: 'metrica2', get curto() { return tr('metrica.m2.curto'); }, get label() { return tr('metrica.m2'); } },
 ];
 
 export const TZ = 'America/Sao_Paulo';
@@ -25,42 +28,46 @@ export function isNum(v) {
 
 export function fmtPct(v, digits = 2) {
   if (!isNum(v)) return '—';
-  return `${v.toLocaleString('pt-BR', { minimumFractionDigits: digits, maximumFractionDigits: digits })}%`;
+  return `${v.toLocaleString(localeAtual(), { minimumFractionDigits: digits, maximumFractionDigits: digits })}%`;
 }
 
 export function fmtNum(v) {
   if (!isNum(v)) return '—';
-  return Math.round(v).toLocaleString('pt-BR');
+  return Math.round(v).toLocaleString(localeAtual());
 }
 
-// "23,05 mi de 158,75 mi": as duas quantidades na escala do total (milhões ou milhares)
+// "23,05 mi de 158,75 mi" ("23.05M of 158.75M" em inglês): as duas quantidades na escala do total
 export function fmtParteDeTotal(parte, total) {
   if (!isNum(parte) || !isNum(total) || total <= 0) return '—';
-  const [div, sufixo, casas] = total >= 1e6 ? [1e6, 'mi', 2] : [1e3, 'mil', 1];
-  const f = (v) => (v / div).toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas });
+  const en = idiomaDoModulo() === 'en';
+  const [div, sufixo, casas] = total >= 1e6 ? [1e6, en ? 'M' : 'mi', 2] : [1e3, en ? 'K' : 'mil', 1];
+  const f = (v) => (v / div).toLocaleString(localeAtual(), { minimumFractionDigits: casas, maximumFractionDigits: casas });
   // espaço inseparável entre número e unidade: só quebra linha em volta do "de"
+  if (en) return `${f(parte)}${sufixo} of ${f(total)}${sufixo}`;
   return `${f(parte)} ${sufixo} de ${f(total)} ${sufixo}`;
 }
 
 export function fmtDec(v, digits = 2) {
   if (!isNum(v)) return '—';
-  return v.toLocaleString('pt-BR', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  return v.toLocaleString(localeAtual(), { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
 
 export function fmtPp(v, digits = 2, withSign = false) {
   if (!isNum(v)) return '—';
-  const s = Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: digits, maximumFractionDigits: digits });
-  if (!withSign) return `${s} p.p.`;
+  const s = Math.abs(v).toLocaleString(localeAtual(), { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  const pp = idiomaDoModulo() === 'en' ? 'pp' : 'p.p.';
+  if (!withSign) return `${s} ${pp}`;
   const sign = v > 0 ? '+' : v < 0 ? '−' : '';
-  return `${sign}${s} p.p.`;
+  return `${sign}${s} ${pp}`;
 }
 
 export function fmtHora(iso, withSeconds = true) {
   if (!iso) return '--:--';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '--:--';
-  return d.toLocaleTimeString('pt-BR', {
-    hour: '2-digit', minute: '2-digit', ...(withSeconds ? { second: '2-digit' } : {}), timeZone: TZ,
+  // relógio de 24 h no fuso de Brasília nos dois idiomas
+  return d.toLocaleTimeString(localeAtual(), {
+    hour: '2-digit', minute: '2-digit', ...(withSeconds ? { second: '2-digit' } : {}), hourCycle: 'h23', timeZone: TZ,
   });
 }
 
@@ -80,7 +87,10 @@ export function fmtDuracao(ms) {
   return [h, m, s].map((n) => String(n).padStart(2, '0')).join(':');
 }
 
+// "Brasil" e "Exterior" são traduzidos pelo código (br, zz); os demais são nomes próprios.
 export function nomeUf(uf, fallback) {
+  const u = (uf || '').toLowerCase();
+  if (idiomaDoModulo() === 'en' && (u === 'br' || u === 'zz')) return tr(`uf.${u}`);
   return fallback || UF_NOMES[(uf || '').toLowerCase()] || (uf || '').toUpperCase();
 }
 
@@ -186,18 +196,18 @@ export function temApuracao(race) {
 export function metricaDestaque(race, status) {
   if (status === 'aguardando' || !temApuracao(race)) {
     const pre = parPct(race, 'metrica1PreApuracao');
-    if (pre[0] != null) return { key: 'metrica1PreApuracao', label: 'Projeção pré-apuração', valores: pre };
+    if (pre[0] != null) return { key: 'metrica1PreApuracao', label: tr('destaque.pre'), valores: pre };
   }
   if (status === 'encerrada' || race?.apuracao?.pctSecoes >= 100) {
     const of = parPct(race, 'oficial');
-    if (of[0] != null) return { key: 'oficial', label: 'Resultado oficial (TSE)', valores: of };
+    if (of[0] != null) return { key: 'oficial', label: tr('destaque.oficial'), valores: of };
   }
   const m2 = parPct(race, 'metrica2');
-  if (m2[0] != null) return { key: 'metrica2', label: 'Projeção em tempo real · Métrica 2', valores: m2 };
+  if (m2[0] != null) return { key: 'metrica2', label: tr('destaque.m2'), valores: m2 };
   const m1 = parPct(race, 'metrica1');
-  if (m1[0] != null) return { key: 'metrica1', label: 'Métrica 1 · Proporção do 1º turno', valores: m1 };
+  if (m1[0] != null) return { key: 'metrica1', label: tr('destaque.m1'), valores: m1 };
   const pre = parPct(race, 'metrica1PreApuracao');
-  return { key: 'metrica1PreApuracao', label: 'Projeção pré-apuração', valores: pre };
+  return { key: 'metrica1PreApuracao', label: tr('destaque.pre'), valores: pre };
 }
 
 // ---------- Cores ----------
@@ -280,5 +290,5 @@ export function clarear(hex, amt = 0.35) {
 }
 
 export function nomeCurto(cand) {
-  return cand?.nome || cand?.nomeCompleto || 'Candidato';
+  return cand?.nome || cand?.nomeCompleto || tr('candidato');
 }

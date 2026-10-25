@@ -1,15 +1,18 @@
 import React from 'react';
+import { useI18n } from '../../i18n/useI18n';
 import { fmtDec, isNum } from './utils';
 
 // Anel de progresso da apuração (% de seções apuradas).
-export default function ApuracaoProgress({ pct, tamanho = 112, espessura = 10, rotulo = 'seções apuradas' }) {
+export default function ApuracaoProgress({ pct, tamanho = 112, espessura = 10, rotulo }) {
+  const { t } = useI18n();
+  const rotuloTxt = rotulo ?? t('apuracaoProgress.rotulo');
   const valor = isNum(pct) ? Math.max(0, Math.min(100, pct)) : 0;
   const r = (tamanho - espessura) / 2;
   const c = 2 * Math.PI * r;
   const completo = valor >= 100;
 
   return (
-    <div className="relative shrink-0" style={{ width: tamanho, height: tamanho }} role="img" aria-label={`${fmtDec(valor)}% das ${rotulo}`}>
+    <div className="relative shrink-0" style={{ width: tamanho, height: tamanho }} role="img" aria-label={t('apuracaoProgress.aria', { valor: fmtDec(valor), rotulo: rotuloTxt })}>
       <svg width={tamanho} height={tamanho} className="-rotate-90">
         <circle cx={tamanho / 2} cy={tamanho / 2} r={r} fill="none" stroke="rgba(148,163,184,0.15)" strokeWidth={espessura} />
         <circle
@@ -37,7 +40,7 @@ export default function ApuracaoProgress({ pct, tamanho = 112, espessura = 10, r
         </span>
         {tamanho >= 100 && (
           <span className="mt-1 max-w-[62%] text-[9px] font-semibold uppercase leading-tight tracking-wide text-slate-400">
-            {rotulo}
+            {rotuloTxt}
           </span>
         )}
       </div>

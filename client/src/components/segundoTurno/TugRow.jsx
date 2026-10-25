@@ -1,4 +1,5 @@
 import React from 'react';
+import { useI18n } from '../../i18n/useI18n';
 import { clarear, fmtPct, fmtPp, isNum } from './utils';
 
 function primeiroNome(c) {
@@ -13,10 +14,12 @@ export default function TugRow({
   cores,
   candidatos = [],
   destaque = false,
-  vazio = 'aguardando dados',
+  vazio,
   tag = null,
   compacto = false,
 }) {
+  const { t } = useI18n();
+  const vazioTxt = vazio === undefined ? t('tugRow.aguardandoDados') : vazio;
   const [p0, p1] = valores;
   const ok = isNum(p0) && isNum(p1);
   const dif = ok ? p0 - p1 : null;
@@ -35,7 +38,7 @@ export default function TugRow({
         </span>
         {ok ? (
           <span className="shrink-0 text-[11px] sm:text-xs font-semibold tabular-nums" style={{ color: corLider }}>
-            {lider == null ? 'Empate' : `+${fmtPp(Math.abs(dif))} ${primeiroNome(candidatos[lider])}`}
+            {lider == null ? t('tugRow.empate') : `+${fmtPp(Math.abs(dif))} ${primeiroNome(candidatos[lider])}`}
           </span>
         ) : tag ? (
           <span className="shrink-0 text-[10px] sm:text-[11px] font-semibold uppercase tracking-wide text-amber-300 bg-amber-400/10 ring-1 ring-amber-400/30 rounded-full px-2 py-0.5">
@@ -77,13 +80,13 @@ export default function TugRow({
           {ok ? fmtPct(p1) : '—'}
         </span>
       </div>
-      {!ok && !tag && vazio && (
-        <p className="mt-1 text-[11px] text-slate-500">{vazio}</p>
+      {!ok && !tag && vazioTxt && (
+        <p className="mt-1 text-[11px] text-slate-500">{vazioTxt}</p>
       )}
       <span className="sr-only">
         {ok
           ? `${label}: ${candidatos[0]?.nome} ${fmtPct(p0)}, ${candidatos[1]?.nome} ${fmtPct(p1)}`
-          : `${label}: ${tag || vazio}`}
+          : `${label}: ${tag || vazioTxt}`}
       </span>
     </div>
   );

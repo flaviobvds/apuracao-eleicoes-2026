@@ -7,6 +7,7 @@ import StateView from './components/StateView';
 import DeputadosView from './components/DeputadosView';
 import SegundoTurnoPage from './components/segundoTurno/SegundoTurnoPage';
 import SobreDesenvolvedor from './components/SobreDesenvolvedor';
+import { useI18n } from './i18n/useI18n';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
 function isSegundoTurno(value) {
@@ -35,6 +36,7 @@ function getPageFromLocation() {
 }
 
 export default function App() {
+  const { t } = useI18n();
   const [activePage, setActivePage] = useState(getPageFromLocation);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -51,6 +53,11 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
+  // Título da aba conforme a página e o idioma
+  useEffect(() => {
+    document.title = activePage === 'segundo-turno' ? t('doc.tituloSegundoTurno') : t('doc.tituloAntigas');
+  }, [activePage, t]);
+
   const handlePageChange = (newPage) => {
     if (newPage === activePage) return;
     setActivePage(newPage);
@@ -58,7 +65,7 @@ export default function App() {
       // preserva só os parâmetros de teste da página do 2º turno
       const atual = new URLSearchParams(window.location.search);
       const q = new URLSearchParams();
-      ['mock', 'simular'].forEach((k) => {
+      ['mock', 'simular', 'lang'].forEach((k) => {
         if (atual.get(k)) q.set(k, atual.get(k));
       });
       const qs = q.toString();
@@ -127,11 +134,10 @@ export default function App() {
         <footer className="bg-slate-900/90 border-t border-slate-800/80 py-6 text-xs text-slate-400 mt-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row md:items-center justify-between gap-2">
             <p>
-              Fonte: API pública de divulgação de resultados do TSE (resultados.tse.jus.br). Projeções são estimativas
-              estatísticas, não resultados oficiais.
+              {t('rodape.fonte')}
             </p>
             <div className="flex shrink-0 items-center gap-3">
-              <span className="text-slate-500">Eleições Gerais 2026 • 2º turno</span>
+              <span className="text-slate-500">{t('rodape.segundoTurno')}</span>
               <SobreDesenvolvedor />
             </div>
           </div>
@@ -222,18 +228,18 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div>
             <p className="font-semibold text-slate-300">
-              {activePage === 'presidente' 
-                ? 'Projeção 100% dos Votos Válidos (Presidente)'
-                : 'Cálculo Proporcional do TSE (Deputados Federais e Estaduais)'}
+              {activePage === 'presidente'
+                ? t('rodape.presidenteTitulo')
+                : t('rodape.deputadosTitulo')}
             </p>
             <p className="mt-0.5 text-slate-400">
               {activePage === 'presidente'
-                ? 'Cálculo baseado nos dados oficiais do TSE aplicados às seções eleitorais restantes de cada localidade.'
-                : 'Aplicação das regras do Código Eleitoral: Quociente Eleitoral (QE), Quociente Partidário (QP) e Sobras D\'Hondt.'}
+                ? t('rodape.presidenteTexto')
+                : t('rodape.deputadosTexto')}
             </p>
           </div>
           <div className="flex items-center gap-3 text-right text-slate-400">
-            <span>Eleições Gerais 2026 • Dados Oficiais TSE</span>
+            <span>{t('rodape.antigas')}</span>
             <SobreDesenvolvedor />
           </div>
         </div>

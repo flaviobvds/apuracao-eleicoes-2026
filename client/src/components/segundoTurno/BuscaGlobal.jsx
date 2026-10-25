@@ -2,7 +2,9 @@ import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 
 import { Building2, Landmark, Loader2, MapPin, Search, X } from 'lucide-react';
 import { apiUrl } from './useSegundoTurno';
 import { buildMockIndice } from './mockSegundoTurno';
-import { UF_NOMES, interpretarBusca, normalizar, siglaUf, tituloMunicipio, zonaSemZeros } from './utils';
+import { UF_NOMES, interpretarBusca, nomeUf, normalizar, siglaUf, tituloMunicipio, zonaSemZeros } from './utils';
+import { useI18n } from '../../i18n/useI18n';
+import { tr } from '../../i18n/estado';
 
 const MAX_RESULTADOS = 12;
 const GOV_UFS = new Set(['ac', 'am', 'df', 'es', 'rn', 'to']);
@@ -25,8 +27,8 @@ function prepararIndice(json) {
   return { ufs, municipios };
 }
 
-function buscar(indice, q) {
-  const { texto: t0, zona } = interpretarBusca(q);
+function buscar(indice, q, t) {
+  const { texto: t0, zona } = interpretarBusca(q.replace(/\bzone\b/gi, 'zona')); // aceita "zone 33" além de "zona 33"
   if (!t0 && zona == null) return [];
   const ufsTodas = indice?.ufs || [];
   const siglas = new Set(ufsTodas.map((u) => u.uf));
@@ -45,11 +47,11 @@ function buscar(indice, q) {
     ufsTodas
       .filter((u) => u.uf === texto || siglaUf(u.uf).toLowerCase() === texto || u.norm.startsWith(texto) || u.norm.includes(` ${texto}`) || (texto.length >= 3 && u.norm.includes(texto)))
       .slice(0, 4)
-      .forEach((u) => out.push({ tipo: 'uf', id: `uf-${u.uf}`, uf: u.uf, titulo: u.nome, sub: u.uf === 'zz' ? 'Votos no exterior' : `Estado · ${siglaUf(u.uf)}` }));
+      .forEach((u) => out.push({ tipo: 'uf', id: `uf-${u.uf}`, uf: u.uf, titulo: nomeUf(u.uf, u.nome), sub: u.uf === 'zz' ? t('buscaGlobal.votosExterior') : t('buscaGlobal.estado', { sigla: siglaUf(u.uf) }) }));
   }
   if (zona == null && !texto && ufFiltro) {
     const u = ufsTodas.find((x) => x.uf === ufFiltro);
-    if (u) out.push({ tipo: 'uf', id: `uf-${u.uf}`, uf: u.uf, titulo: u.nome, sub: `Estado · ${siglaUf(u.uf)}` });
+    if (u) out.push({ tipo: 'uf', id: `uf-${u.uf}`, uf: u.uf, titulo: nomeUf(u.uf, u.nome), sub: t('buscaGlobal.estado', { sigla: siglaUf(u.uf) }) });
   }
 
   const munis = indice?.municipios || [];
@@ -60,9 +62,9 @@ function buscar(indice, q) {
     cands.sort((a, b) => (b.capital - a.capital) || a.nome.localeCompare(b.nome, 'pt-BR'));
     cands.slice(0, MAX_RESULTADOS).forEach((m) => {
       const z = m.zonas.find((x) => parseInt(x, 10) === zona) || String(zona).padStart(4, '0');
-      out.push({ tipo: 'zona', id: `z-${m.uf}-${m.cod}-${z}`, uf: m.uf, cargo: 'presidente', mun: m, zona: z, titulo: `Zona ${zonaSemZeros(z)} · ${m.nome} – ${siglaUf(m.uf)}`, sub: 'Presidente · par município × zona' });
+      out.push({ tipo: 'zona', id: `z-${m.uf}-${m.cod}-${z}`, uf: m.uf, cargo: 'presidente', mun: m, zona: z, titulo: t('buscaGlobal.zonaTitulo', { zona: zonaSemZeros(z), nome: m.nome, sigla: siglaUf(m.uf) }), sub: t('buscaGlobal.subZonaPresidente') });
       if (m.governador) {
-        out.push({ tipo: 'zona', id: `zg-${m.uf}-${m.cod}-${z}`, uf: m.uf, cargo: 'governador', mun: m, zona: z, titulo: `Zona ${zonaSemZeros(z)} · ${m.nome} – ${siglaUf(m.uf)}`, sub: 'Governador · par município × zona' });
+        out.push({ tipo: 'zona', id: `zg-${m.uf}-${m.cod}-${z}`, uf: m.uf, cargo: 'governador', mun: m, zona: z, titulo: t('buscaGlobal.zonaTitulo', { zona: zonaSemZeros(z), nome: m.nome, sigla: siglaUf(m.uf) }), sub: t('buscaGlobal.subZonaGovernador') });
       }
     });
   } else if (texto.length >= 2) {
@@ -75,9 +77,9 @@ function buscar(indice, q) {
     });
     const ord = (a, b) => (b.capital - a.capital) || a.nome.localeCompare(b.nome, 'pt-BR');
     [...comeca.sort(ord), ...contem.sort(ord)].slice(0, MAX_RESULTADOS).forEach((m) => {
-      out.push({ tipo: 'municipio', id: `m-${m.uf}-${m.cod}`, uf: m.uf, cargo: 'presidente', mun: m, titulo: `${m.nome} – ${siglaUf(m.uf)}`, sub: m.capital ? 'Capital · Presidente' : 'Município · Presidente' });
+      out.push({ tipo: 'municipio', id: `m-${m.uf}-${m.cod}`, uf: m.uf, cargo: 'presidente', mun: m, titulo: `${m.nome} – ${siglaUf(m.uf)}`, sub: m.capital ? t('buscaGlobal.subCapitalPresidente') : t('buscaGlobal.subMunicipioPresidente') });
       if (m.governador) {
-        out.push({ tipo: 'municipio', id: `mg-${m.uf}-${m.cod}`, uf: m.uf, cargo: 'governador', mun: m, titulo: `${m.nome} – ${siglaUf(m.uf)}`, sub: 'Governador' });
+        out.push({ tipo: 'municipio', id: `mg-${m.uf}-${m.cod}`, uf: m.uf, cargo: 'governador', mun: m, titulo: `${m.nome} – ${siglaUf(m.uf)}`, sub: t('buscaGlobal.subGovernador') });
       }
     });
   }
@@ -88,6 +90,7 @@ const ICONES = { uf: Landmark, municipio: Building2, zona: MapPin };
 
 // Busca global: UFs, municípios e zonas. onAbrir({ cargo, uf, filtro })
 export default function BuscaGlobal({ modo, onAbrir }) {
+  const { t } = useI18n();
   const [q, setQ] = useState('');
   const [aberto, setAberto] = useState(false);
   const [ativo, setAtivo] = useState(0);
@@ -110,13 +113,13 @@ export default function BuscaGlobal({ modo, onAbrir }) {
         const res = await fetch(apiUrl('/indice', null), { cache: 'force-cache' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         json = await res.json();
-        if (!json || json.success === false) throw new Error('resposta inválida');
+        if (!json || json.success === false) throw new Error(tr('buscaGlobal.erroInvalida'));
       }
       indiceCache = prepararIndice(json);
       setIndice(indiceCache);
       setErroIdx(null);
     } catch (e) {
-      setErroIdx(e?.message || 'falha');
+      setErroIdx(e?.message || tr('buscaGlobal.erroFalha'));
     } finally {
       setCarregandoIdx(false);
     }
@@ -132,7 +135,7 @@ export default function BuscaGlobal({ modo, onAbrir }) {
   }, []);
 
   const indiceEfetivo = useMemo(() => indice || prepararIndice(null), [indice]);
-  const resultados = useMemo(() => buscar(indiceEfetivo, q), [indiceEfetivo, q]);
+  const resultados = useMemo(() => buscar(indiceEfetivo, q, t), [indiceEfetivo, q, t]);
 
   const escolher = (r) => {
     if (!r) return;
@@ -143,7 +146,7 @@ export default function BuscaGlobal({ modo, onAbrir }) {
     } else if (r.tipo === 'municipio') {
       onAbrir({ cargo: r.cargo, uf: r.uf, filtro: { tipo: 'municipios', busca: r.mun.nome, alvoId: r.mun.cod } });
     } else {
-      onAbrir({ cargo: r.cargo, uf: r.uf, filtro: { tipo: 'zonas', busca: `${r.mun.nome} zona ${zonaSemZeros(r.zona)}`, alvoId: `${r.mun.cod}-${r.zona}` } });
+      onAbrir({ cargo: r.cargo, uf: r.uf, filtro: { tipo: 'zonas', busca: `${r.mun.nome} ${t('buscaGlobal.palavraZona')} ${zonaSemZeros(r.zona)}`, alvoId: `${r.mun.cod}-${r.zona}` } });
     }
   };
 
@@ -169,7 +172,7 @@ export default function BuscaGlobal({ modo, onAbrir }) {
 
   return (
     <div ref={caixa} className="relative w-full">
-      <label htmlFor={`${listaId}-input`} className="sr-only">Busque seu estado, município ou zona</label>
+      <label htmlFor={`${listaId}-input`} className="sr-only">{t('buscaGlobal.label')}</label>
       <Search className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
       <input
         id={`${listaId}-input`}
@@ -184,11 +187,11 @@ export default function BuscaGlobal({ modo, onAbrir }) {
         onChange={(e) => { setQ(e.target.value); setAberto(true); setAtivo(0); carregarIndice(); }}
         onFocus={() => { setAberto(true); carregarIndice(); }}
         onKeyDown={onKeyDown}
-        placeholder="Busque seu estado, município ou zona"
+        placeholder={t('buscaGlobal.placeholder')}
         className="h-12 w-full rounded-2xl bg-slate-900/80 pl-11 pr-11 text-[15px] text-white placeholder:text-slate-500 ring-1 ring-white/15 shadow-lg shadow-black/20 focus:outline-none focus:ring-2 focus:ring-indigo-400"
       />
       {q && (
-        <button type="button" onClick={() => { setQ(''); setAtivo(0); }} aria-label="Limpar busca" className="absolute right-1 top-1 flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 hover:text-white">
+        <button type="button" onClick={() => { setQ(''); setAtivo(0); }} aria-label={t('buscaGlobal.limparBusca')} className="absolute right-1 top-1 flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 hover:text-white">
           <X className="w-4 h-4" />
         </button>
       )}
@@ -217,7 +220,7 @@ export default function BuscaGlobal({ modo, onAbrir }) {
                     <span className="block truncate text-[11px] text-slate-400">{r.sub}</span>
                   </span>
                   {r.cargo === 'governador' && (
-                    <span className="shrink-0 rounded-md bg-emerald-400/10 px-1.5 py-0.5 text-[10px] font-bold uppercase text-emerald-200 ring-1 ring-emerald-400/30">Gov.</span>
+                    <span className="shrink-0 rounded-md bg-emerald-400/10 px-1.5 py-0.5 text-[10px] font-bold uppercase text-emerald-200 ring-1 ring-emerald-400/30">{t('buscaGlobal.gov')}</span>
                   )}
                 </li>
               );
@@ -225,11 +228,11 @@ export default function BuscaGlobal({ modo, onAbrir }) {
             {resultados.length === 0 && (
               <li className="px-4 py-3 text-sm text-slate-400">
                 {carregandoIdx ? (
-                  <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Carregando municípios…</span>
+                  <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> {t('buscaGlobal.carregando')}</span>
                 ) : erroIdx && !indice ? (
-                  'Busca de municípios indisponível no momento. Estados continuam pesquisáveis.'
+                  t('buscaGlobal.indisponivel')
                 ) : (
-                  'Nada encontrado. Tente “Campinas”, “zona 5 SP” ou “Bahia”.'
+                  t('buscaGlobal.nadaEncontrado')
                 )}
               </li>
             )}

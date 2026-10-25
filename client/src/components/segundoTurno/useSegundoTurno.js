@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { buildMockSegundoTurno } from './mockSegundoTurno';
 import { isNum, parPct } from './utils';
+import { tr } from '../../i18n/estado';
 
 export const INTERVALO_S = 20;
 const MAX_PONTOS = 720;
@@ -137,7 +138,7 @@ export function useSegundoTurno() {
         const res = await fetch(apiUrl('', modo), { cache: 'no-store', headers: { Accept: 'application/json' } });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         json = await res.json();
-        if (!json || json.success === false) throw new Error(json?.error || json?.message || 'resposta inválida');
+        if (!json || json.success === false) throw new Error(json?.error || json?.message || tr('erro.respostaInvalida'));
       }
       setData(json);
       setErro(null);
@@ -146,7 +147,7 @@ export function useSegundoTurno() {
         setHistorico((prev) => anexarPontos(prev, json));
       }
     } catch (e) {
-      setErro(e?.message || 'falha de conexão');
+      setErro(e?.message || tr('erro.conexao'));
     } finally {
       emAndamento.current = false;
       setCarregando(false);

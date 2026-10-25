@@ -1,8 +1,10 @@
 import React from 'react';
+import { useI18n } from '../../i18n/useI18n';
 import { candidatosDe, clarear, coresCorrida, fmtPct, fmtPp, isNum, nomeUf, parPct, siglaUf } from './utils';
 
 // Cartão compacto de uma UF na grade do Presidente.
 export default function UfCard({ race, metrica = 'metrica2', onAbrir }) {
+  const { t } = useI18n();
   const cands = candidatosDe(race);
   const cores = coresCorrida(race);
   const [p0, p1] = parPct(race, metrica);
@@ -16,7 +18,9 @@ export default function UfCard({ race, metrica = 'metrica2', onAbrir }) {
       type="button"
       onClick={() => onAbrir?.(race)}
       className="group min-w-0 w-full rounded-2xl border border-white/10 bg-slate-900/70 p-3 text-left transition-colors hover:border-white/25 hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
-      aria-label={`${nomeUf(race.uf, race.nome)}: ${ok ? `${cands[lider]?.nome} lidera com ${fmtPct(lider === 0 ? p0 : p1)}` : 'sem dados'}, ${fmtPct(pct)} apurado. Abrir detalhe`}
+      aria-label={ok
+        ? t('ufCard.ariaLidera', { uf: nomeUf(race.uf, race.nome), candidato: cands[lider]?.nome, pct: fmtPct(lider === 0 ? p0 : p1), apurado: fmtPct(pct) })
+        : t('ufCard.ariaSemDados', { uf: nomeUf(race.uf, race.nome), apurado: fmtPct(pct) })}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -25,7 +29,7 @@ export default function UfCard({ race, metrica = 'metrica2', onAbrir }) {
         </div>
         <div className="shrink-0 text-right leading-tight">
           <div className="text-xs font-bold tabular-nums text-slate-200">{fmtPct(pct, 1)}</div>
-          <div className="text-[10px] text-slate-500">apurado</div>
+          <div className="text-[10px] text-slate-500">{t('ufCard.apurado')}</div>
         </div>
       </div>
 
@@ -53,11 +57,11 @@ export default function UfCard({ race, metrica = 'metrica2', onAbrir }) {
             </span>
           </>
         ) : (
-          <span className="text-slate-500">aguardando</span>
+          <span className="text-slate-500">{t('ufCard.aguardando')}</span>
         )}
       </div>
       <div className="mt-0.5 flex items-center justify-between gap-2 text-[10px] text-slate-500 tabular-nums">
-        <span>{ok ? `margem ${fmtPp(margem, 1)}` : ' '}</span>      </div>
+        <span>{ok ? t('ufCard.margem', { valor: fmtPp(margem, 1) }) : ' '}</span>      </div>
     </button>
   );
 }

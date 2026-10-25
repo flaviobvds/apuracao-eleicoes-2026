@@ -1,5 +1,6 @@
 import React from 'react';
 import { BadgeCheck, Calculator, Clock, Hourglass } from 'lucide-react';
+import { useI18n } from '../../i18n/useI18n';
 import TugRow from './TugRow';
 import ApuracaoProgress from './ApuracaoProgress';
 import {
@@ -8,15 +9,17 @@ import {
 } from './utils';
 
 export function SeloEleito({ pequeno = false }) {
+  const { t } = useI18n();
   return (
     <span className={`inline-flex items-center gap-1 rounded-full bg-emerald-400 text-emerald-950 font-black uppercase tracking-wider ${pequeno ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-0.5 text-[10px] sm:text-[11px]'}`}>
       <BadgeCheck className={pequeno ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
-      Eleito
+      {t('raceScoreboard.eleito')}
     </span>
   );
 }
 
 function Finalistas({ candidatos, cores, valores, grande }) {
+  const { t } = useI18n();
   return (
     <div className="grid grid-cols-2 gap-3 sm:gap-6">
       {[0, 1].map((i) => {
@@ -38,7 +41,7 @@ function Finalistas({ candidatos, cores, valores, grande }) {
               className={`mt-1 max-w-full truncate font-bold text-white ${grande ? 'text-base sm:text-2xl' : 'text-sm sm:text-base'}`}
               title={c?.nomeCompleto || c?.nome}
             >
-              {c?.nome || 'Candidato'}
+              {c?.nome || t('raceScoreboard.candidato')}
             </div>
             <div
               className={`mt-1 font-black tabular-nums leading-none tracking-tight ${grande ? 'text-4xl sm:text-6xl lg:text-7xl' : 'text-3xl sm:text-4xl'}`}
@@ -53,42 +56,51 @@ function Finalistas({ candidatos, cores, valores, grande }) {
   );
 }
 
+// Mesmo instante no horário do leste (Toronto), p.ex. " (4:00 PM ET)"; vazio se a data for inválida.
+function horaEt(alvo) {
+  if (!isNum(alvo)) return '';
+  const h = new Date(alvo).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Toronto' });
+  return ` (${h} ET)`;
+}
+
 function ContagemInicio({ inicioApuracao, now, compacto }) {
+  const { t } = useI18n();
   const alvo = Date.parse(inicioApuracao || '');
   const falta = isNum(alvo) ? alvo - now : null;
   if (falta != null && falta > 0) {
     return (
       <div className={`rounded-2xl bg-amber-400/10 ring-1 ring-amber-400/30 text-center ${compacto ? 'p-3' : 'p-4 sm:p-5'}`}>
         <p className="flex items-center justify-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-amber-300">
-          <Hourglass className="w-3.5 h-3.5" /> A apuração começa em
+          <Hourglass className="w-3.5 h-3.5" /> {t('raceScoreboard.comecaEm')}
         </p>
         <p className={`mt-1 font-black tabular-nums text-white leading-none ${compacto ? 'text-3xl' : 'text-4xl sm:text-6xl'}`}>
           {fmtDuracao(falta)}
         </p>
         <p className="mt-2 text-xs text-amber-100/80">
-          Às {fmtHora(inicioApuracao, false)} (horário de Brasília). Até lá, o placar mostra a projeção pré-apuração.
+          {t('raceScoreboard.comecaAs', { hora: fmtHora(inicioApuracao, false), et: horaEt(alvo) })}
         </p>
       </div>
     );
   }
   return (
     <div className="rounded-2xl bg-amber-400/10 ring-1 ring-amber-400/30 p-3 text-center text-sm font-semibold text-amber-200">
-      Aguardando os primeiros boletins do TSE…
+      {t('raceScoreboard.aguardandoBoletins')}
     </div>
   );
 }
 
 function Indicadores({ race, tseDataHora, cores, mostrarPre = true }) {
+  const { t } = useI18n();
   const ap = race?.apuracao || {};
   const [c0, c1] = candidatosDe(race);
   const pre = parPct(race, 'metrica1PreApuracao');
   const v = race?.variacaoPp;
   const favorecido = isNum(v) ? (v >= 0 ? c0 : c1) : null;
   const itens = [
-    ['Seções apuradas', isNum(ap.secoesTotais) ? `${fmtNum(ap.secoesApuradas)} de ${fmtNum(ap.secoesTotais)}` : '—'],
-    ['Eleitorado apurado', isNum(ap.eleitoradoApurado) ? fmtParteDeTotal(ap.eleitoradoApurado, ap.eleitorado) : '—'],
-    ['Comparecimento', isNum(ap.pctComparecimento) ? `${fmtPct(ap.pctComparecimento)}${isNum(ap.comparecimento) && ap.comparecimento > 0 ? ` · ${fmtNum(ap.comparecimento)}` : ''}` : '—'],
-    ['Atualização do TSE', horaTse(tseDataHora) || '—'],
+    [t('raceScoreboard.secoesApuradas'), isNum(ap.secoesTotais) ? t('raceScoreboard.secoesDe', { a: fmtNum(ap.secoesApuradas), b: fmtNum(ap.secoesTotais) }) : '—'],
+    [t('raceScoreboard.eleitoradoApurado'), isNum(ap.eleitoradoApurado) ? fmtParteDeTotal(ap.eleitoradoApurado, ap.eleitorado) : '—'],
+    [t('raceScoreboard.comparecimento'), isNum(ap.pctComparecimento) ? `${fmtPct(ap.pctComparecimento)}${isNum(ap.comparecimento) && ap.comparecimento > 0 ? ` · ${fmtNum(ap.comparecimento)}` : ''}` : '—'],
+    [t('raceScoreboard.atualizacaoTse'), horaTse(tseDataHora) || '—'],
   ];
   return (
     <dl className="grid grid-cols-1 gap-2.5 text-sm">
@@ -100,7 +112,7 @@ function Indicadores({ race, tseDataHora, cores, mostrarPre = true }) {
       ))}
       {mostrarPre && (
         <div className="flex items-baseline justify-between gap-3 border-b border-white/5 pb-2">
-          <dt className="text-slate-400 text-xs">Projeção pré-apuração</dt>
+          <dt className="text-slate-400 text-xs">{t('raceScoreboard.projecaoPre')}</dt>
           <dd className="font-semibold tabular-nums text-right">
             <span style={{ color: clarear(cores[0], 0.3) }}>{fmtPct(pre[0])}</span>
             <span className="text-slate-500"> × </span>
@@ -109,14 +121,14 @@ function Indicadores({ race, tseDataHora, cores, mostrarPre = true }) {
         </div>
       )}
       <div className="flex flex-col gap-0.5">
-        <dt className="text-slate-400 text-xs">Variação vs 1º turno</dt>
+        <dt className="text-slate-400 text-xs">{t('raceScoreboard.variacao')}</dt>
         <dd className="font-semibold text-slate-100 text-[13px] leading-snug">
           {favorecido
             ? <>
                 <span className="tabular-nums" style={{ color: clarear(cores[v >= 0 ? 0 : 1], 0.3) }}>{v >= 0 ? '+' : '−'}{fmtPp(Math.abs(v), 1)}</span>
-                {' '}para {favorecido.nome}
+                {' '}{t('raceScoreboard.paraCandidato', { nome: favorecido.nome })}
               </>
-            : <span className="text-slate-500 font-normal">sem dados ainda</span>}
+            : <span className="text-slate-500 font-normal">{t('raceScoreboard.semDadosAinda')}</span>}
         </dd>
       </div>
     </dl>
@@ -128,6 +140,7 @@ export default function RaceScoreboard({
   race, status, inicioApuracao, now, tseDataHora, variante = 'card',
   titulo, onComoCalculamos, acoes = null, children,
 }) {
+  const { t } = useI18n();
   if (!race) return null;
   const candidatos = candidatosDe(race);
   const cores = coresCorrida(race);
@@ -137,12 +150,12 @@ export default function RaceScoreboard({
   const encerrada = status === 'encerrada' || race.apuracao?.pctSecoes >= 100;
 
   const linhas = [
-    { key: 'oficial', label: 'Apurado (TSE)', valores: aguardando ? [null, null] : parPct(race, 'oficial'), vazio: 'aguarda a apuração', destaque: encerrada },
-    { key: 'metrica1', label: 'Métrica 1 · Proporção do 1º turno', valores: parPct(race, 'metrica1'), vazio: 'sem dados' },
-    { key: 'metrica2', label: 'Métrica 2 · Tempo real', valores: aguardando ? [null, null] : parPct(race, 'metrica2'), tag: aguardando ? 'começa com a apuração' : null, vazio: 'sem dados', destaque: !aguardando && !encerrada },
+    { key: 'oficial', label: t('raceScoreboard.oficial'), valores: aguardando ? [null, null] : parPct(race, 'oficial'), vazio: t('raceScoreboard.aguardaApuracao'), destaque: encerrada },
+    { key: 'metrica1', label: t('raceScoreboard.metrica1'), valores: parPct(race, 'metrica1'), vazio: t('raceScoreboard.semDados') },
+    { key: 'metrica2', label: t('raceScoreboard.metrica2'), valores: aguardando ? [null, null] : parPct(race, 'metrica2'), tag: aguardando ? t('raceScoreboard.comecaComApuracao') : null, vazio: t('raceScoreboard.semDados'), destaque: !aguardando && !encerrada },
   ];
 
-  const cargoTxt = race.cargo === 'governador' ? 'Governador' : 'Presidente';
+  const cargoTxt = race.cargo === 'governador' ? t('raceScoreboard.governador') : t('raceScoreboard.presidente');
   const tituloTxt = titulo || `${cargoTxt} · ${nomeUf(race.uf, race.nome)}`;
   const pct = race.apuracao?.pctSecoes;
 
@@ -162,16 +175,16 @@ export default function RaceScoreboard({
       <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
         <div className="min-w-0 max-w-full">
           <p className={`font-bold uppercase tracking-[0.18em] text-slate-400 ${hero ? 'text-[11px] sm:text-xs' : 'text-[10px] sm:text-[11px]'}`}>
-            {hero ? '2º turno · Votos válidos' : cargoTxt}
+            {hero ? t('raceScoreboard.heroSobretitulo') : cargoTxt}
           </p>
           <h2 className={`truncate font-black tracking-tight text-white ${hero ? 'text-xl sm:text-3xl' : 'text-lg sm:text-xl'}`}>
-            {hero ? `Presidente · ${nomeUf(race.uf, race.nome)}` : nomeUf(race.uf, race.nome)}
+            {hero ? `${t('raceScoreboard.presidente')} · ${nomeUf(race.uf, race.nome)}` : nomeUf(race.uf, race.nome)}
           </h2>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {!hero && isNum(pct) && pct > 0 && (
             <span className="rounded-full bg-white/5 ring-1 ring-white/10 px-2 py-1 text-[11px] font-semibold tabular-nums text-slate-300">
-              {fmtPct(pct)} apurado
+              {t('raceScoreboard.apuradoPct', { pct: fmtPct(pct) })}
             </span>
           )}
           {acoes}
@@ -182,7 +195,7 @@ export default function RaceScoreboard({
               className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-indigo-500/15 px-3 text-xs sm:text-sm font-bold text-indigo-200 ring-1 ring-indigo-400/40 hover:bg-indigo-500/25 hover:text-white transition-colors"
             >
               <Calculator className="w-4 h-4" />
-              <span>Como calculamos</span>
+              <span>{t('raceScoreboard.comoCalculamos')}</span>
             </button>
           )}
         </div>
@@ -222,9 +235,9 @@ export default function RaceScoreboard({
             <div className="flex items-center gap-4">
               <ApuracaoProgress pct={pct} />
               <div className="min-w-0">
-                <p className="text-xs uppercase tracking-wider text-slate-400">Apuração</p>
+                <p className="text-xs uppercase tracking-wider text-slate-400">{t('raceScoreboard.apuracao')}</p>
                 <p className="text-sm font-semibold text-slate-100 leading-snug">
-                  {status === 'encerrada' ? 'Apuração encerrada' : aguardando ? 'Ainda não começou' : 'Em andamento'}
+                  {status === 'encerrada' ? t('raceScoreboard.apuracaoEncerrada') : aguardando ? t('raceScoreboard.aindaNaoComecou') : t('raceScoreboard.emAndamento')}
                 </p>
                 <p className="mt-1 flex items-center gap-1 text-xs text-slate-400">
                   <Clock className="w-3.5 h-3.5" /> TSE: {horaTse(tseDataHora) || '—'}

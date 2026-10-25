@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
+import { useI18n } from '../../i18n/useI18n';
 
 // Pilha de modais abertos: Esc fecha só o de cima.
 const pilha = [];
@@ -7,6 +8,7 @@ let seq = 0;
 
 // Modal acessível: tela cheia no celular; painel lateral (lado="direita") ou centralizado no desktop.
 export default function Modal({ aberto, onFechar, titulo, subtitulo, lado = 'centro', largura = 'max-w-3xl', children }) {
+  const { t } = useI18n();
   const painelRef = useRef(null);
   const fecharRef = useRef(onFechar);
 
@@ -65,7 +67,7 @@ export default function Modal({ aberto, onFechar, titulo, subtitulo, lado = 'cen
             type="button"
             onClick={onFechar}
             className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/5 text-slate-300 ring-1 ring-white/10 hover:bg-white/10 hover:text-white"
-            aria-label="Fechar"
+            aria-label={t('modal.fechar')}
           >
             <X className="w-5 h-5" />
           </button>

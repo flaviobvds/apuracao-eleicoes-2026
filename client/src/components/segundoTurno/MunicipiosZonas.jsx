@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, ChevronDown, Loader2, MapPinned, Search, WifiOff, X } from 'lucide-react';
 import Segmentado from './Segmentado';
+import { useI18n } from '../../i18n/useI18n';
+import { tr } from '../../i18n/estado';
 import { apiUrl } from './useSegundoTurno';
 import { buildMockUfDetalhe } from './mockSegundoTurno';
 import {
@@ -10,13 +12,14 @@ import {
 const PAGINA = 100;
 
 const ORDENS = [
-  { valor: 'eleitorado', label: 'Eleitorado', padrao: 'desc' },
-  { valor: 'nome', label: 'Nome', padrao: 'asc' },
-  { valor: 'apurado', label: '% apurado', padrao: 'desc' },
-  { valor: 'dif', label: 'Diferença (p.p.)', padrao: 'desc' },
+  { valor: 'eleitorado', chave: 'municipiosZonas.ordemEleitorado', padrao: 'desc' },
+  { valor: 'nome', chave: 'municipiosZonas.ordemNome', padrao: 'asc' },
+  { valor: 'apurado', chave: 'municipiosZonas.ordemApurado', padrao: 'desc' },
+  { valor: 'dif', chave: 'municipiosZonas.ordemDif', padrao: 'desc' },
 ];
 
 function MiniBarra({ pct, cores }) {
+  useI18n();
   const ok = isNum(pct);
   return (
     <div className="flex min-w-0 items-center gap-2">
@@ -37,23 +40,25 @@ function MiniBarra({ pct, cores }) {
 }
 
 function Dif({ v, cores }) {
+  useI18n();
   if (!isNum(v)) return <span className="text-slate-500">—</span>;
   const cor = v > 0 ? clarear(cores[0], 0.3) : v < 0 ? clarear(cores[1], 0.3) : '#cbd5e1';
   return <span className="whitespace-nowrap font-bold tabular-nums" style={{ color: cor }}>{fmtPp(v, 2, true)}</span>;
 }
 
 function NomeLinha({ l, modoZonas }) {
+  const { t } = useI18n();
   return (
     <span className="flex min-w-0 items-center gap-1.5">
       <span className="truncate font-semibold text-slate-100" title={l.nomeFmt}>{l.nomeFmt}</span>
       {modoZonas && l.zona != null && (
         <span className="shrink-0 rounded-md bg-white/5 px-1.5 py-0.5 text-[11px] font-semibold text-slate-300 ring-1 ring-white/10">
-          Zona {zonaSemZeros(l.zona)}
+          {t('municipiosZonas.zona', { n: zonaSemZeros(l.zona) })}
         </span>
       )}
       {l.capital && (
         <span className="shrink-0 rounded-md bg-indigo-400/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-indigo-200 ring-1 ring-indigo-400/30">
-          Capital
+          {t('municipiosZonas.capital')}
         </span>
       )}
     </span>
@@ -61,6 +66,7 @@ function NomeLinha({ l, modoZonas }) {
 }
 
 export default function MunicipiosZonas({ race, cargo, modo, ciclo, filtroInicial = null }) {
+  const { t } = useI18n();
   const uf = race?.uf;
   const [aberto, setAberto] = useState(Boolean(filtroInicial));
   const [tipo, setTipo] = useState(filtroInicial?.tipo || 'municipios');
@@ -95,14 +101,14 @@ export default function MunicipiosZonas({ race, cargo, modo, ciclo, filtroInicia
           const res = await fetch(apiUrl(`/uf/${encodeURIComponent(uf)}`, modo, { cargo }), { cache: 'no-store' });
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           json = await res.json();
-          if (!json || json.success === false) throw new Error(json?.error || 'resposta inválida');
+          if (!json || json.success === false) throw new Error(json?.error || tr('municipiosZonas.respostaInvalida'));
         }
         if (!cancelado) {
           setDados(json);
           setErro(null);
         }
       } catch (e) {
-        if (!cancelado) setErro(e?.message || 'falha de conexão');
+        if (!cancelado) setErro(e?.message || tr('municipiosZonas.falhaConexao'));
       } finally {
         if (!cancelado) setCarregando(false);
       }
@@ -115,8 +121,8 @@ export default function MunicipiosZonas({ race, cargo, modo, ciclo, filtroInicia
 
   useEffect(() => {
     if (filtroInicial && raiz.current) {
-      const t = setTimeout(() => raiz.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
-      return () => clearTimeout(t);
+      const tm = setTimeout(() => raiz.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+      return () => clearTimeout(tm);
     }
     return undefined;
   }, [filtroInicial]);
@@ -149,7 +155,7 @@ export default function MunicipiosZonas({ race, cargo, modo, ciclo, filtroInicia
   }, [dados]);
 
   const filtradas = useMemo(() => {
-    const { texto, zona } = interpretarBusca(busca);
+    const { texto, zona } = interpretarBusca(busca.replace(/\bzone\b/gi, 'zona'));
     let arr = linhasBase;
     if (texto) arr = arr.filter((l) => l.norm.includes(texto));
     if (zona != null) {
@@ -174,7 +180,7 @@ export default function MunicipiosZonas({ race, cargo, modo, ciclo, filtroInicia
 
   const visiveis = filtradas.slice(0, limite);
   const alvo = filtroInicial?.alvoId;
-  const nomeC0 = candidatos[0]?.nome || 'candidato 1';
+  const nomeC0 = candidatos[0]?.nome || t('municipiosZonas.candidato1');
 
   const mudarOrdem = (v) => {
     setOrdem(v);
@@ -195,8 +201,8 @@ export default function MunicipiosZonas({ race, cargo, modo, ciclo, filtroInicia
             <MapPinned className="w-4 h-4 text-slate-200" />
           </span>
           <span className="min-w-0">
-            <span className="block text-sm sm:text-base font-black text-white">Municípios e zonas</span>
-            <span className="block truncate text-[11px] sm:text-xs text-slate-400">1º × 2º turno, só entre os dois finalistas</span>
+            <span className="block text-sm sm:text-base font-black text-white">{t('municipiosZonas.titulo')}</span>
+            <span className="block truncate text-[11px] sm:text-xs text-slate-400">{t('municipiosZonas.subtitulo')}</span>
           </span>
         </span>
         <ChevronDown className={`w-5 h-5 shrink-0 text-slate-400 transition-transform ${aberto ? 'rotate-180' : ''}`} />
@@ -206,43 +212,43 @@ export default function MunicipiosZonas({ race, cargo, modo, ciclo, filtroInicia
         <div className="mt-3 space-y-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
             <Segmentado
-              rotulo="Agrupar por"
-              opcoes={[{ valor: 'municipios', label: 'Municípios' }, { valor: 'zonas', label: 'Zonas (município × zona)' }]}
+              rotulo={t('municipiosZonas.agruparPor')}
+              opcoes={[{ valor: 'municipios', label: t('municipiosZonas.opMunicipios') }, { valor: 'zonas', label: t('municipiosZonas.opZonas') }]}
               valor={tipo}
               onChange={(v) => { setTipo(v); setLimite(PAGINA); }}
               className="w-full sm:w-auto"
             />
             <label className="relative flex-1 min-w-0 sm:min-w-[200px]">
-              <span className="sr-only">Buscar município ou zona</span>
+              <span className="sr-only">{t('municipiosZonas.buscarLabel')}</span>
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
               <input
                 type="search"
                 value={busca}
                 onChange={(e) => { setBusca(e.target.value); setLimite(PAGINA); }}
-                placeholder="Município ou nº da zona"
+                placeholder={t('municipiosZonas.buscarPlaceholder')}
                 className="h-10 w-full rounded-xl bg-slate-950/60 pl-9 pr-9 text-sm text-white placeholder:text-slate-500 ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-400"
               />
               {busca && (
-                <button type="button" onClick={() => setBusca('')} aria-label="Limpar busca" className="absolute right-0 top-0 flex h-10 w-10 items-center justify-center text-slate-400 hover:text-white">
+                <button type="button" onClick={() => setBusca('')} aria-label={t('municipiosZonas.limparBusca')} className="absolute right-0 top-0 flex h-10 w-10 items-center justify-center text-slate-400 hover:text-white">
                   <X className="w-4 h-4" />
                 </button>
               )}
             </label>
             <div className="flex items-center gap-1">
-              <label className="sr-only" htmlFor={`ordem-${cargo}-${uf}`}>Ordenar por</label>
+              <label className="sr-only" htmlFor={`ordem-${cargo}-${uf}`}>{t('municipiosZonas.ordenarPor')}</label>
               <select
                 id={`ordem-${cargo}-${uf}`}
                 value={ordem}
                 onChange={(e) => mudarOrdem(e.target.value)}
                 className="h-10 flex-1 rounded-xl bg-slate-950/60 px-3 text-sm text-slate-200 ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-400"
               >
-                {ORDENS.map((o) => <option key={o.valor} value={o.valor} className="bg-slate-900">Ordenar: {o.label}</option>)}
+                {ORDENS.map((o) => <option key={o.valor} value={o.valor} className="bg-slate-900">{t('municipiosZonas.ordenarOpcao', { label: t(o.chave) })}</option>)}
               </select>
               <button
                 type="button"
                 onClick={() => setDirecao((d) => (d === 'asc' ? 'desc' : 'asc'))}
                 className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-950/60 text-slate-300 ring-1 ring-white/10 hover:text-white"
-                aria-label={direcao === 'asc' ? 'Ordem crescente (inverter)' : 'Ordem decrescente (inverter)'}
+                aria-label={direcao === 'asc' ? t('municipiosZonas.ordemCrescente') : t('municipiosZonas.ordemDecrescente')}
               >
                 {direcao === 'asc' ? <ArrowUpNarrowWide className="w-4 h-4" /> : <ArrowDownWideNarrow className="w-4 h-4" />}
               </button>
@@ -251,23 +257,23 @@ export default function MunicipiosZonas({ race, cargo, modo, ciclo, filtroInicia
 
           <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
             <span className="tabular-nums">
-              {dados ? `${fmtNum(filtradas.length)} ${tipo === 'zonas' ? 'pares município × zona' : 'municípios'}${filtradas.length > visiveis.length ? ` · mostrando ${fmtNum(visiveis.length)}` : ''}` : ''}
+              {dados ? `${fmtNum(filtradas.length)} ${tipo === 'zonas' ? t('municipiosZonas.tipoPares') : t('municipiosZonas.tipoMunicipios')}${filtradas.length > visiveis.length ? ` · ${t('municipiosZonas.mostrando', { n: fmtNum(visiveis.length) })}` : ''}` : ''}
             </span>
-            <span>Barras e diferença: % de <strong className="text-slate-200">{nomeC0}</strong> entre os dois (+ = a favor de {nomeC0})</span>
+            <span>{t('municipiosZonas.legendaPre')}<strong className="text-slate-200">{nomeC0}</strong>{t('municipiosZonas.legendaPos', { nome: nomeC0 })}</span>
           </div>
 
           {erro && (
             <p className="flex items-center gap-2 rounded-xl bg-amber-400/10 px-3 py-2 text-xs text-amber-200 ring-1 ring-amber-400/20">
-              <WifiOff className="w-4 h-4 shrink-0" /> Não foi possível atualizar os municípios ({erro}).{dados ? ' Mostrando o último dado.' : ''}
+              <WifiOff className="w-4 h-4 shrink-0" /> {t('municipiosZonas.erro', { erro })}{dados ? t('municipiosZonas.erroUltimo') : ''}
             </p>
           )}
           {carregando && !dados && (
             <p className="flex items-center justify-center gap-2 py-8 text-sm text-slate-400">
-              <Loader2 className="w-4 h-4 animate-spin" /> Carregando municípios…
+              <Loader2 className="w-4 h-4 animate-spin" /> {t('municipiosZonas.carregando')}
             </p>
           )}
           {dados && filtradas.length === 0 && (
-            <p className="rounded-xl border border-dashed border-white/10 p-6 text-center text-sm text-slate-400">Nada encontrado para “{busca}”.</p>
+            <p className="rounded-xl border border-dashed border-white/10 p-6 text-center text-sm text-slate-400">{t('municipiosZonas.nadaEncontrado', { busca })}</p>
           )}
 
           {visiveis.length > 0 && (
@@ -278,12 +284,12 @@ export default function MunicipiosZonas({ race, cargo, modo, ciclo, filtroInicia
                 <table className="w-full table-fixed text-sm">
                   <thead className="bg-white/[0.03] text-[11px] uppercase tracking-wider text-slate-400">
                     <tr>
-                      <th className="w-[30%] px-3 py-2 text-left font-semibold">{tipo === 'zonas' ? 'Município · zona' : 'Município'}</th>
-                      <th className="w-[12%] px-2 py-2 text-right font-semibold">Eleitorado</th>
-                      <th className="w-[20%] px-2 py-2 text-left font-semibold">1º turno</th>
-                      <th className="w-[20%] px-2 py-2 text-left font-semibold">2º turno</th>
-                      <th className="w-[10%] px-2 py-2 text-right font-semibold">Dif.</th>
-                      <th className="w-[8%] px-3 py-2 text-right font-semibold">Apur.</th>
+                      <th className="w-[30%] px-3 py-2 text-left font-semibold">{tipo === 'zonas' ? t('municipiosZonas.colMunicipioZona') : t('municipiosZonas.colMunicipio')}</th>
+                      <th className="w-[12%] px-2 py-2 text-right font-semibold">{t('municipiosZonas.colEleitorado')}</th>
+                      <th className="w-[20%] px-2 py-2 text-left font-semibold">{t('municipiosZonas.col1Turno')}</th>
+                      <th className="w-[20%] px-2 py-2 text-left font-semibold">{t('municipiosZonas.col2Turno')}</th>
+                      <th className="w-[10%] px-2 py-2 text-right font-semibold">{t('municipiosZonas.colDif')}</th>
+                      <th className="w-[8%] px-3 py-2 text-right font-semibold">{t('municipiosZonas.colApur')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
@@ -310,12 +316,12 @@ export default function MunicipiosZonas({ race, cargo, modo, ciclo, filtroInicia
                       <span className="shrink-0 text-xs"><Dif v={l.difPp} cores={cores} /></span>
                     </div>
                     <div className="mt-2 grid grid-cols-[3.25rem_1fr] items-center gap-x-2 gap-y-1.5 text-[11px] text-slate-400">
-                      <span>1º turno</span><MiniBarra pct={l.t1pct} cores={cores} />
-                      <span>2º turno</span><MiniBarra pct={l.t2pct} cores={cores} />
+                      <span>{t('municipiosZonas.col1Turno')}</span><MiniBarra pct={l.t1pct} cores={cores} />
+                      <span>{t('municipiosZonas.col2Turno')}</span><MiniBarra pct={l.t2pct} cores={cores} />
                     </div>
                     <div className="mt-1.5 flex justify-between text-[11px] tabular-nums text-slate-500">
-                      <span>{fmtNum(l.eleitorado)} eleitores</span>
-                      <span>{fmtPct(l.pctApurado, 0)} apurado</span>
+                      <span>{t('municipiosZonas.eleitores', { n: fmtNum(l.eleitorado) })}</span>
+                      <span>{t('municipiosZonas.apurado', { pct: fmtPct(l.pctApurado, 0) })}</span>
                     </div>
                   </li>
                 ))}
@@ -327,7 +333,7 @@ export default function MunicipiosZonas({ race, cargo, modo, ciclo, filtroInicia
                   onClick={() => setLimite((n) => n + PAGINA)}
                   className="flex min-h-11 w-full items-center justify-center rounded-xl bg-white/5 text-sm font-semibold text-slate-200 ring-1 ring-white/10 hover:bg-white/10"
                 >
-                  Mostrar mais ({fmtNum(Math.min(PAGINA, filtradas.length - visiveis.length))} de {fmtNum(filtradas.length - visiveis.length)} restantes)
+                  {t('municipiosZonas.mostrarMais', { n: fmtNum(Math.min(PAGINA, filtradas.length - visiveis.length)), restantes: fmtNum(filtradas.length - visiveis.length) })}
                 </button>
               )}
             </div>

@@ -1,22 +1,26 @@
 import React, { useMemo, useState } from 'react';
 import { ArrowDownWideNarrow, ArrowUpNarrowWide } from 'lucide-react';
+import { useI18n } from '../../i18n/useI18n';
 import UfCard from './UfCard';
 import Segmentado from './Segmentado';
 import { isNum, nomeUf, parPct } from './utils';
 
-const ORDENS = [
-  { valor: 'nome', label: 'UF', padrao: 'asc', titulo: 'Ordenar pelo nome da UF' },
-  { valor: 'apurado', label: '% apurado', padrao: 'desc', titulo: 'Ordenar pelo % de seções apuradas' },
-  { valor: 'margem', label: 'Margem', padrao: 'asc', titulo: 'Ordenar pela margem entre os candidatos' },
+const ordensDe = (t) => [
+  { valor: 'nome', label: t('ufGrid.ordemUf'), padrao: 'asc', titulo: t('ufGrid.ordemUfTitulo') },
+  { valor: 'apurado', label: t('ufGrid.ordemApurado'), padrao: 'desc', titulo: t('ufGrid.ordemApuradoTitulo') },
+  { valor: 'margem', label: t('ufGrid.ordemMargem'), padrao: 'asc', titulo: t('ufGrid.ordemMargemTitulo') },
 ];
 
-const METRICAS_GRADE = [
-  { valor: 'oficial', label: 'Oficial', titulo: 'Apurado (TSE)' },
-  { valor: 'metrica1', label: 'M1', titulo: 'Métrica 1 · Proporção do 1º turno' },
-  { valor: 'metrica2', label: 'M2', titulo: 'Métrica 2 · Tempo real' },
+const metricasGradeDe = (t) => [
+  { valor: 'oficial', label: t('ufGrid.metricaOficial'), titulo: t('ufGrid.metricaOficialTitulo') },
+  { valor: 'metrica1', label: 'M1', titulo: t('ufGrid.metrica1Titulo') },
+  { valor: 'metrica2', label: 'M2', titulo: t('ufGrid.metrica2Titulo') },
 ];
 
 export default function UfGrid({ ufs, onAbrir, metricaInicial = 'metrica2' }) {
+  const { t, locale } = useI18n();
+  const ORDENS = ordensDe(t);
+  const METRICAS_GRADE = metricasGradeDe(t);
   const [ordem, setOrdem] = useState('nome');
   const [direcao, setDirecao] = useState('asc');
   const [metrica, setMetrica] = useState(metricaInicial);
@@ -37,17 +41,17 @@ export default function UfGrid({ ufs, onAbrir, metricaInicial = 'metrica2' }) {
         // Exterior sempre no fim na ordem alfabética
         if (x.race.uf === 'zz') return 1;
         if (y.race.uf === 'zz') return -1;
-        return x.nome.localeCompare(y.nome, 'pt-BR') * mult;
+        return x.nome.localeCompare(y.nome, locale) * mult;
       }
       const vx = x[ordem];
       const vy = y[ordem];
-      if (vx == null && vy == null) return x.nome.localeCompare(y.nome, 'pt-BR');
+      if (vx == null && vy == null) return x.nome.localeCompare(y.nome, locale);
       if (vx == null) return 1;
       if (vy == null) return -1;
-      return (vx - vy) * mult || x.nome.localeCompare(y.nome, 'pt-BR');
+      return (vx - vy) * mult || x.nome.localeCompare(y.nome, locale);
     });
     return arr;
-  }, [ufs, ordem, direcao, metrica]);
+  }, [ufs, ordem, direcao, metrica, locale]);
 
   const trocarOrdem = (v) => {
     if (v === ordem) {
@@ -62,25 +66,25 @@ export default function UfGrid({ ufs, onAbrir, metricaInicial = 'metrica2' }) {
     <section className="min-w-0 space-y-3">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Presidente por UF</p>
-          <h3 className="text-lg sm:text-xl font-black text-white">27 estados + Exterior</h3>
-          <p className="text-xs text-slate-400">Toque num cartão para ver o placar completo da UF.</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">{t('ufGrid.sobretitulo')}</p>
+          <h3 className="text-lg sm:text-xl font-black text-white">{t('ufGrid.titulo')}</h3>
+          <p className="text-xs text-slate-400">{t('ufGrid.dica')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Segmentado
-            rotulo="Métrica exibida na grade"
+            rotulo={t('ufGrid.rotuloMetrica')}
             opcoes={METRICAS_GRADE}
             valor={metrica}
             onChange={setMetrica}
           />
           <div className="flex items-center gap-1">
-            <Segmentado rotulo="Ordenar por" opcoes={ORDENS} valor={ordem} onChange={trocarOrdem} />
+            <Segmentado rotulo={t('ufGrid.rotuloOrdenar')} opcoes={ORDENS} valor={ordem} onChange={trocarOrdem} />
             <button
               type="button"
               onClick={() => setDirecao((d) => (d === 'asc' ? 'desc' : 'asc'))}
               className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-950/60 text-slate-300 ring-1 ring-white/10 hover:text-white"
-              aria-label={direcao === 'asc' ? 'Ordem crescente (inverter)' : 'Ordem decrescente (inverter)'}
-              title={direcao === 'asc' ? 'Crescente' : 'Decrescente'}
+              aria-label={direcao === 'asc' ? t('ufGrid.ariaCrescente') : t('ufGrid.ariaDecrescente')}
+              title={direcao === 'asc' ? t('ufGrid.tituloCrescente') : t('ufGrid.tituloDecrescente')}
             >
               {direcao === 'asc' ? <ArrowUpNarrowWide className="w-4 h-4" /> : <ArrowDownWideNarrow className="w-4 h-4" />}
             </button>
@@ -88,11 +92,11 @@ export default function UfGrid({ ufs, onAbrir, metricaInicial = 'metrica2' }) {
         </div>
       </div>
       <p className="text-[11px] text-slate-500">
-        Barras: {METRICAS_GRADE.find((m) => m.valor === metrica)?.titulo}. Linha branca = 50%.
+        {t('ufGrid.legenda', { metrica: METRICAS_GRADE.find((m) => m.valor === metrica)?.titulo })}
       </p>
 
       {lista.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-white/10 p-6 text-center text-sm text-slate-400">Sem dados por UF ainda.</p>
+        <p className="rounded-xl border border-dashed border-white/10 p-6 text-center text-sm text-slate-400">{t('ufGrid.semDados')}</p>
       ) : (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {lista.map(({ race }) => (

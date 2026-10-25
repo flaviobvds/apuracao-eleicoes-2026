@@ -1,4 +1,5 @@
 import React from 'react';
+import { useI18n } from '../../i18n/useI18n';
 import Modal from './Modal';
 import RaceScoreboard from './RaceScoreboard';
 import EvolutionChart from './EvolutionChart';
@@ -9,14 +10,15 @@ import { nomeUf } from './utils';
 export default function RaceModal({
   race, onFechar, data, now, historico, modo, ciclo, filtro, onComoCalculamos,
 }) {
+  const { t } = useI18n();
   const aberto = Boolean(race);
   const cargo = race?.cargo === 'governador' ? 'governador' : 'presidente';
   return (
     <Modal
       aberto={aberto}
       onFechar={onFechar}
-      titulo={race ? `${cargo === 'governador' ? 'Governador' : 'Presidente'} · ${nomeUf(race.uf, race.nome)}` : ''}
-      subtitulo="Placar completo, evolução e municípios"
+      titulo={race ? `${cargo === 'governador' ? t('raceModal.governador') : t('raceModal.presidente')} · ${nomeUf(race.uf, race.nome)}` : ''}
+      subtitulo={t('raceModal.subtitulo')}
     >
       {race && (
         <div className="space-y-4 pb-4">
@@ -42,7 +44,7 @@ export default function RaceModal({
             historicoLocal={historico?.[race.id]}
             modo={modo}
             ciclo={ciclo}
-            titulo={`Evolução · ${nomeUf(race.uf, race.nome)}`}
+            titulo={t('raceModal.tituloGrafico', { nome: nomeUf(race.uf, race.nome) })}
             altura={220}
           />
         </div>

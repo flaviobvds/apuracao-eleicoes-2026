@@ -1,9 +1,11 @@
 import React from 'react';
 import { FlaskConical } from 'lucide-react';
+import { useI18n } from '../../i18n/useI18n';
 import { fmtDec, isNum } from './utils';
 
 // Faixa bem visível para modo simulação (?simular=NN) e mock local (?mock=1).
 export default function SimulacaoBanner({ modo, simulacao }) {
+  const { t } = useI18n();
   const simulando = modo?.simular != null || simulacao;
   if (!simulando && !modo?.mock) return null;
   const alvo = isNum(simulacao?.pctAlvo) ? simulacao.pctAlvo : Number(modo?.simular);
@@ -17,12 +19,12 @@ export default function SimulacaoBanner({ modo, simulacao }) {
         <FlaskConical className="mt-0.5 w-5 h-5 shrink-0" />
         <div className="min-w-0">
           <p className="text-sm sm:text-base font-black uppercase tracking-wider">
-            {simulando ? 'Modo simulação' : 'Modo mock (dados fictícios)'}
+            {simulando ? t('simulacaoBanner.modoSimulacao') : t('simulacaoBanner.modoMock')}
           </p>
           <p className="text-xs sm:text-sm font-medium">
             {simulando
-              ? `Dados simulados${Number.isFinite(alvo) ? ` com ${fmtDec(alvo, 0)}% das seções apuradas` : ''}. Não são resultados reais.`
-              : 'Dados gerados localmente no navegador para testar a interface. A API não é consultada.'}
+              ? t('simulacaoBanner.dadosSimulados', { secoes: Number.isFinite(alvo) ? t('simulacaoBanner.comSecoes', { pct: fmtDec(alvo, 0) }) : '' })
+              : t('simulacaoBanner.mock')}
           </p>
         </div>
       </div>

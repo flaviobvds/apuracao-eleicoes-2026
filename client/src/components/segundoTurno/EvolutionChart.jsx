@@ -4,13 +4,14 @@ import {
 } from 'recharts';
 import { ArrowLeftRight, LineChart as IconeGrafico } from 'lucide-react';
 import { useHistoricoServidor } from './useHistoricoServidor';
+import { useI18n } from '../../i18n/useI18n';
 import { candidatosDe, clarear, coresCorrida, fmtDec, fmtHora, fmtPct, isNum } from './utils';
 
 // Fonte das duas linhas: índice no ponto compacto [t, pctSecoes, oficial, metrica1, metrica2]
 const FONTES = [
-  { valor: 'oficial', label: 'Apurado (TSE)', idx: 2 },
-  { valor: 'm1', label: 'Métrica 1', idx: 3 },
-  { valor: 'm2', label: 'Métrica 2', idx: 4 },
+  { valor: 'oficial', labelKey: 'evolutionChart.fonteOficial', idx: 2 },
+  { valor: 'm1', labelKey: 'evolutionChart.fonteM1', idx: 3 },
+  { valor: 'm2', labelKey: 'evolutionChart.fonteM2', idx: 4 },
 ];
 
 const CHAVE_FONTE = 'segundoTurno2026:fonteGrafico:v1';
@@ -45,13 +46,14 @@ function detectarViradas(dados) {
 }
 
 function DicaGrafico({ active, payload, candidatos, cores, fonteLabel }) {
+  const { t } = useI18n();
   if (!active || !payload || !payload.length) return null;
   const p = payload[0].payload;
   const lider = p.c0 > p.c1 ? 0 : p.c1 > p.c0 ? 1 : null;
   return (
     <div className="min-w-[12.5rem] rounded-xl bg-slate-950/95 px-3 py-2 text-xs shadow-xl ring-1 ring-white/15">
       <p className="font-semibold text-slate-200 tabular-nums">
-        {fmtHora(p.t, false)} · {fmtDec(p.pct)}% apurado
+        {t('evolutionChart.dicaApurado', { hora: fmtHora(p.t, false), pct: fmtDec(p.pct) })}
       </p>
       <p className="text-[10px] uppercase tracking-wider text-slate-500">{fonteLabel}</p>
       <div className="mt-1.5 space-y-1">
@@ -62,7 +64,7 @@ function DicaGrafico({ active, payload, candidatos, cores, fonteLabel }) {
           >
             <span className="flex min-w-0 items-center gap-1.5">
               <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: cores[i] }} />
-              <span className={`truncate ${lider === i ? 'font-bold text-white' : 'text-slate-300'}`}>{candidatos[i]?.nome || `Candidato ${i + 1}`}</span>
+              <span className={`truncate ${lider === i ? 'font-bold text-white' : 'text-slate-300'}`}>{candidatos[i]?.nome || t('evolutionChart.candidatoN', { n: i + 1 })}</span>
             </span>
             <span className={lider === i ? 'font-black' : 'font-semibold'} style={{ color: clarear(cores[i], 0.3) }}>
               {fmtPct(i === 0 ? p.c0 : p.c1)}
@@ -78,6 +80,7 @@ function DicaGrafico({ active, payload, candidatos, cores, fonteLabel }) {
 export default function EvolutionChart({
   race, historicoLocal, modo, ciclo, titulo, seletor = null, altura = 260,
 }) {
+  const { t } = useI18n();
   const [eixo, setEixo] = useState('hora');
   const [fonte, setFonte] = useState(lerFonte);
   const { serie, fonte: origem } = useHistoricoServidor(race, { modo, ciclo, historicoLocal });
@@ -108,7 +111,8 @@ export default function EvolutionChart({
     return [50 - meia, 50 + meia];
   }, [dados]);
 
-  const nome = (i) => candidatos[i]?.nome || `Candidato ${i + 1}`;
+  const nome = (i) => candidatos[i]?.nome || t('evolutionChart.candidatoN', { n: i + 1 });
+  const fonteLabel = t(fonteAtual.labelKey);
 
   let resumo = null;
   if (dados.length) {
@@ -116,19 +120,19 @@ export default function EvolutionChart({
     if (ultima) {
       resumo = (
         <>
-          <strong className="text-white">Virada às {fmtHora(ultima.t, false)}:</strong>{' '}
-          <span style={{ color: clarear(cores[ultima.lider], 0.3) }} className="font-bold">{nome(ultima.lider)}</span> passa à frente
-          {viradas.length > 1 && <span className="text-slate-500"> · {viradas.length} viradas no total</span>}
+          <strong className="text-white">{t('evolutionChart.viradaAs', { hora: fmtHora(ultima.t, false) })}</strong>{' '}
+          <span style={{ color: clarear(cores[ultima.lider], 0.3) }} className="font-bold">{nome(ultima.lider)}</span>{t('evolutionChart.passaFrente')}
+          {viradas.length > 1 && <span className="text-slate-500">{t('evolutionChart.totalViradas', { n: viradas.length })}</span>}
         </>
       );
     } else {
       const s = dados.map((p) => Math.sign(p.c0 - 50)).find((x) => x !== 0);
       resumo = s == null ? (
-        <>Empate até agora.</>
+        <>{t('evolutionChart.empate')}</>
       ) : (
         <>
-          <strong className="text-white">Sem virada até agora:</strong>{' '}
-          <span style={{ color: clarear(cores[s > 0 ? 0 : 1], 0.3) }} className="font-bold">{nome(s > 0 ? 0 : 1)}</span> lidera desde o início
+          <strong className="text-white">{t('evolutionChart.semVirada')}</strong>{' '}
+          <span style={{ color: clarear(cores[s > 0 ? 0 : 1], 0.3) }} className="font-bold">{nome(s > 0 ? 0 : 1)}</span>{t('evolutionChart.lideraDesdeInicio')}
         </>
       );
     }
@@ -141,14 +145,14 @@ export default function EvolutionChart({
     <section className="min-w-0 rounded-2xl border border-white/10 bg-slate-900/70 p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Evolução da apuração</p>
-          <h3 className="truncate text-base sm:text-lg font-black text-white">{titulo || 'Evolução'}</h3>
-          <p className="text-xs text-slate-400">% de cada finalista entre os dois · a linha de 50% marca a liderança</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">{t('evolutionChart.titulo')}</p>
+          <h3 className="truncate text-base sm:text-lg font-black text-white">{titulo || t('evolutionChart.tituloPadrao')}</h3>
+          <p className="text-xs text-slate-400">{t('evolutionChart.subtitulo')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {seletor}
-          <div className="inline-flex rounded-xl bg-slate-950/60 p-1 ring-1 ring-white/10" role="group" aria-label="Eixo horizontal">
-            {[['hora', 'Hora'], ['pct', '% apurado']].map(([k, l]) => (
+          <div className="inline-flex rounded-xl bg-slate-950/60 p-1 ring-1 ring-white/10" role="group" aria-label={t('evolutionChart.eixoHorizontal')}>
+            {[['hora', t('evolutionChart.eixoHora')], ['pct', t('evolutionChart.eixoPct')]].map(([k, l]) => (
               <button
                 key={k}
                 type="button"
@@ -164,7 +168,7 @@ export default function EvolutionChart({
       </div>
 
       {/* Fonte das linhas (escolha única) */}
-      <div className="mt-3 flex w-full rounded-xl bg-slate-950/60 p-1 ring-1 ring-white/10 sm:inline-flex sm:w-auto" role="radiogroup" aria-label="Fonte das linhas do gráfico">
+      <div className="mt-3 flex w-full rounded-xl bg-slate-950/60 p-1 ring-1 ring-white/10 sm:inline-flex sm:w-auto" role="radiogroup" aria-label={t('evolutionChart.fonteLinhas')}>
         {FONTES.map((f) => {
           const ativo = f.valor === fonte;
           return (
@@ -176,7 +180,7 @@ export default function EvolutionChart({
               onClick={() => setFonte(f.valor)}
               className={`min-h-10 flex-1 whitespace-nowrap rounded-lg px-2 text-xs font-semibold transition-colors sm:flex-none sm:px-4 sm:text-sm ${ativo ? 'bg-white text-slate-950 shadow' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
             >
-              {f.label}
+              {t(f.labelKey)}
             </button>
           );
         })}
@@ -194,8 +198,8 @@ export default function EvolutionChart({
           <IconeGrafico className="w-7 h-7 text-slate-600" />
           <p className="max-w-sm text-sm text-slate-400">
             {serie.length > 0 && fonte === 'oficial'
-              ? 'Ainda não há votos apurados nesta corrida. Troque para Métrica 1 ou Métrica 2 para ver as projeções.'
-              : 'O gráfico começa a ser desenhado quando a apuração começar, às 17h. A partir daí, a curva completa fica disponível para quem abrir a página, com um ponto por minuto.'}
+              ? t('evolutionChart.vazioSemVotos')
+              : t('evolutionChart.vazioAguardando')}
           </p>
         </div>
       ) : (
@@ -234,12 +238,12 @@ export default function EvolutionChart({
                     strokeOpacity={0.3}
                     strokeDasharray="3 3"
                     label={rotular.has(v) ? {
-                      value: `Virada ${fmtHora(v.t, false)}`, position: 'top', fill: '#e2e8f0', fontSize: 10, fontWeight: 700,
+                      value: t('evolutionChart.rotuloVirada', { hora: fmtHora(v.t, false) }), position: 'top', fill: '#e2e8f0', fontSize: 10, fontWeight: 700,
                     } : undefined}
                   />
                 ))}
                 <Tooltip
-                  content={<DicaGrafico candidatos={candidatos} cores={cores} fonteLabel={fonteAtual.label} />}
+                  content={<DicaGrafico candidatos={candidatos} cores={cores} fonteLabel={fonteLabel} />}
                   cursor={{ stroke: 'rgba(148,163,184,0.35)' }}
                 />
                 {[0, 1].map((i) => (
@@ -279,13 +283,13 @@ export default function EvolutionChart({
               ))}
               {viradas.length > 0 && (
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-full border-2 border-slate-100 bg-slate-900" /> virada
+                  <span className="h-2.5 w-2.5 rounded-full border-2 border-slate-100 bg-slate-900" /> {t('evolutionChart.legendaVirada')}
                 </span>
               )}
             </div>
             <span className="text-slate-500">
-              {fonteAtual.label} · Atualizado minuto a minuto
-              {origem === 'local' ? ' · histórico deste navegador' : origem === 'mock' ? ' · histórico simulado (mock)' : ''}
+              {fonteLabel} · {t('evolutionChart.atualizado')}
+              {origem === 'local' ? t('evolutionChart.origemLocal') : origem === 'mock' ? t('evolutionChart.origemMock') : ''}
             </span>
           </div>
         </>

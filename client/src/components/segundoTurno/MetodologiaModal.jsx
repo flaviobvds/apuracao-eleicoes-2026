@@ -1,5 +1,6 @@
 import React from 'react';
 import Modal from './Modal';
+import { useI18n } from '../../i18n/useI18n';
 
 function Secao({ titulo, cor = 'text-indigo-300', children }) {
   return (
@@ -21,10 +22,10 @@ function Formula({ children }) {
 function Lista({ itens }) {
   return (
     <ul className="space-y-2">
-      {itens.map((t, i) => (
+      {itens.map((item, i) => (
         <li key={i} className="flex gap-2.5">
           <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-500" aria-hidden="true" />
-          <span>{t}</span>
+          <span>{item}</span>
         </li>
       ))}
     </ul>
@@ -32,93 +33,82 @@ function Lista({ itens }) {
 }
 
 export default function MetodologiaModal({ aberto, onFechar }) {
+  const { t } = useI18n();
   return (
-    <Modal aberto={aberto} onFechar={onFechar} titulo="Como calculamos" subtitulo="As duas métricas de projeção do 2º turno" largura="max-w-2xl">
+    <Modal aberto={aberto} onFechar={onFechar} titulo={t('metodologia.titulo')} subtitulo={t('metodologia.subtitulo')} largura="max-w-2xl">
       <div className="space-y-7 pb-6">
-        <Secao titulo="Unidade de cálculo" cor="text-slate-200">
+        <Secao titulo={t('metodologia.unidade.titulo')} cor="text-slate-200">
           <p>
-            Tudo é calculado em <strong className="text-white">6.292 pares município × zona eleitoral</strong> (cada
-            zona dentro de cada município, incluindo o exterior) e depois somado para cada UF e para o Brasil.
+            {t('metodologia.unidade.p1a')}<strong className="text-white">{t('metodologia.unidade.p1b')}</strong>{t('metodologia.unidade.p1c')}
           </p>
           <p>
-            Para governador, usamos os <strong className="text-white">513 pares</strong> dos 6 estados com 2º turno
-            (AC, AM, DF, ES, RN e TO).
+            {t('metodologia.unidade.p2a')}<strong className="text-white">{t('metodologia.unidade.p2b')}</strong>{t('metodologia.unidade.p2c')}
           </p>
         </Secao>
 
-        <Secao titulo="Votos que ainda faltam em cada par" cor="text-slate-200">
-          <p className="text-slate-400 text-xs uppercase tracking-wider font-semibold">Comum às duas métricas</p>
+        <Secao titulo={t('metodologia.faltam.titulo')} cor="text-slate-200">
+          <p className="text-slate-400 text-xs uppercase tracking-wider font-semibold">{t('metodologia.faltam.comum')}</p>
           <Formula>
-            votos que faltam =<br />
-            &nbsp;&nbsp;eleitores das seções ainda não apuradas no par<br />
-            &nbsp;&nbsp;× votos válidos por eleitor no par (1º turno)<br />
-            &nbsp;&nbsp;× fator de comparecimento
+            {t('metodologia.faltam.f1')}<br />
+            &nbsp;&nbsp;{t('metodologia.faltam.f2')}<br />
+            &nbsp;&nbsp;× {t('metodologia.faltam.f3')}<br />
+            &nbsp;&nbsp;× {t('metodologia.faltam.f4')}
           </Formula>
           <p>
-            O <strong className="text-white">fator de comparecimento</strong> compara, nos pares já apurados da UF, os
-            votos válidos reais do 2º turno com o que o 1º turno previa (antes da apuração ele vale 1).
+            {t('metodologia.faltam.pa')}<strong className="text-white">{t('metodologia.faltam.pb')}</strong>{t('metodologia.faltam.pc')}
           </p>
         </Secao>
 
-        <Secao titulo="Métrica 1 — Proporção do 1º turno" cor="text-sky-300">
+        <Secao titulo={t('metodologia.m1.titulo')} cor="text-sky-300">
           <p>
-            Para cada par calculamos a proporção entre os dois finalistas no 1º turno, ignorando os demais candidatos:
+            {t('metodologia.m1.intro')}
           </p>
-          <Formula>p = votos de A ÷ (votos de A + votos de B)</Formula>
+          <Formula>{t('metodologia.m1.formula')}</Formula>
           <Lista
             itens={[
-              'Votos já apurados no 2º turno entram como reais; os votos que faltam em cada par são divididos pela proporção p daquele par.',
+              t('metodologia.m1.item1'),
               <>
-                <strong className="text-white">Projeção pré-apuração (fixa):</strong> antes de qualquer voto apurado,
-                supõe que todos os votos válidos de cada par no 1º turno se dividem no 2º turno na proporção p. Esse
-                número não muda durante a apuração.
+                <strong className="text-white">{t('metodologia.m1.item2a')}</strong>{t('metodologia.m1.item2b')}
               </>,
               <>
-                <strong className="text-white">Limitação:</strong> não usa nenhuma informação sobre como os eleitores dos
-                demais candidatos estão votando no 2º turno.
+                <strong className="text-white">{t('metodologia.m1.item3a')}</strong>{t('metodologia.m1.item3b')}
               </>,
             ]}
           />
         </Secao>
 
-        <Secao titulo="Métrica 2 — Projeção em tempo real" cor="text-emerald-300">
+        <Secao titulo={t('metodologia.m2.titulo')} cor="text-emerald-300">
           <Lista
             itens={[
-              'A cada atualização (a cada 20 a 60 s), lemos no TSE o resultado parcial dos pares município × zona que avançaram desde a leitura anterior (até 3.000 por vez, começando pelos lidos há mais tempo).',
+              t('metodologia.m2.item1'),
               <>
-                Nos pares que já têm seções apuradas, medimos o <strong className="text-white">swing</strong>: quanto a
-                proporção real do 2º turno se afastou da proporção p do 1º turno (em escala logística, ponderado pelos
-                votos). O swing é calculado por UF; enquanto uma UF tem poucos votos apurados, ele é puxado para o swing
-                nacional.
+                {t('metodologia.m2.item2a')}<strong className="text-white">{t('metodologia.m2.item2b')}</strong>{t('metodologia.m2.item2c')}
               </>,
-              'Para os votos que faltam em cada par, usamos uma mistura:',
+              t('metodologia.m2.item3'),
             ]}
           />
           <Formula>
-            proporção dos votos que faltam =<br />
-            &nbsp;&nbsp;w × (resultado já apurado no par)<br />
-            &nbsp;&nbsp;+ (1 − w) × (p do 1º turno corrigida pelo swing da UF)<br />
-            <span className="text-slate-400">onde w = % do eleitorado do par já apurado</span>
+            {t('metodologia.m2.f1')}<br />
+            &nbsp;&nbsp;{t('metodologia.m2.f2')}<br />
+            &nbsp;&nbsp;{t('metodologia.m2.f3')}<br />
+            <span className="text-slate-400">{t('metodologia.m2.f4')}</span>
           </Formula>
           <Lista
             itens={[
-              'Pares sem nenhuma seção apurada usam só a proporção do 1º turno corrigida pelo swing.',
-              'Para governador, o swing é calculado só dentro do próprio estado.',
+              t('metodologia.m2.item4'),
+              t('metodologia.m2.item5'),
             ]}
           />
         </Secao>
 
-        <Secao titulo="Leitura" cor="text-amber-300">
+        <Secao titulo={t('metodologia.leitura.titulo')} cor="text-amber-300">
           <p>
-            No início da apuração as duas métricas ficam próximas; a Métrica 2 incorpora o comportamento real dos
-            eleitores no 2º turno e tende a ser mais precisa. Quando a apuração chega a 100%, as duas coincidem com o
-            resultado oficial.
+            {t('metodologia.leitura.texto')}
           </p>
         </Secao>
 
         <p className="rounded-xl bg-white/5 ring-1 ring-white/10 p-3 text-xs text-slate-400">
-          Fonte: API pública de divulgação de resultados do TSE (resultados.tse.jus.br). Projeções são estimativas
-          estatísticas, não resultados oficiais.
+          {t('metodologia.fonte')}
         </p>
       </div>
     </Modal>

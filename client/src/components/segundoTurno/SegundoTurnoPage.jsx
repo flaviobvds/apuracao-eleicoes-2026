@@ -12,6 +12,7 @@ import GovernadoresView from './GovernadoresView';
 import RaceModal from './RaceModal';
 import MetodologiaModal from './MetodologiaModal';
 import { nomeUf } from './utils';
+import { useI18n } from '../../i18n/useI18n';
 
 function Esqueleto() {
   return (
@@ -25,6 +26,7 @@ function Esqueleto() {
 }
 
 export default function SegundoTurnoPage({ onStatus }) {
+  const { t } = useI18n();
   const {
     data, erro, carregando, atualizando, contagem, now, ciclo, historico, modo, atualizarAgora,
   } = useSegundoTurno();
@@ -38,13 +40,7 @@ export default function SegundoTurnoPage({ onStatus }) {
     onStatus?.(status);
   }, [status, onStatus]);
 
-  useEffect(() => {
-    const anterior = document.title;
-    document.title = 'Segundo turno 2026 · Apuração e projeções';
-    return () => {
-      document.title = anterior;
-    };
-  }, []);
+  // O título da aba (conforme o idioma) é definido no App.
 
   const nacional = data?.presidente?.nacional || null;
   const ufs = useMemo(() => (Array.isArray(data?.presidente?.ufs) ? data.presidente.ufs.filter(Boolean) : []), [data]);
@@ -74,12 +70,12 @@ export default function SegundoTurnoPage({ onStatus }) {
 
   const opcoesGrafico = useMemo(() => {
     const lista = [];
-    if (nacional) lista.push({ id: nacional.id, nome: 'Brasil' });
+    if (nacional) lista.push({ id: nacional.id, nome: t('uf.br') });
     [...ufs]
       .sort((a, b) => nomeUf(a.uf, a.nome).localeCompare(nomeUf(b.uf, b.nome), 'pt-BR'))
       .forEach((r) => lista.push({ id: r.id, nome: nomeUf(r.uf, r.nome) }));
     return lista;
-  }, [nacional, ufs]);
+  }, [nacional, ufs, t]);
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-5 px-4 py-5 sm:space-y-6 sm:px-6 sm:py-8 lg:px-8">
@@ -88,9 +84,9 @@ export default function SegundoTurnoPage({ onStatus }) {
       {/* Cabeçalho da página + busca global */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-indigo-300">Eleições 2026 · 25 de outubro</p>
-          <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">Segundo turno</h1>
-          <p className="mt-1 text-sm text-slate-400">Apuração oficial do TSE e duas projeções para 100% das urnas.</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-indigo-300">{t('pagina.sobretitulo')}</p>
+          <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">{t('pagina.titulo')}</h1>
+          <p className="mt-1 text-sm text-slate-400">{t('pagina.subtitulo')}</p>
         </div>
         <div className="w-full lg:max-w-md">
           <BuscaGlobal modo={modo} onAbrir={abrirBusca} />
@@ -101,29 +97,29 @@ export default function SegundoTurnoPage({ onStatus }) {
 
       {carregando && !data ? (
         <>
-          <p className="flex items-center gap-2 text-sm text-slate-400"><Loader2 className="w-4 h-4 animate-spin" /> Carregando a apuração do 2º turno…</p>
+          <p className="flex items-center gap-2 text-sm text-slate-400"><Loader2 className="w-4 h-4 animate-spin" /> {t('pagina.carregando')}</p>
           <Esqueleto />
         </>
       ) : !data ? (
         <div className="rounded-3xl border border-rose-500/30 bg-rose-950/30 p-6 text-center">
           <AlertTriangle className="mx-auto w-8 h-8 text-rose-300" />
-          <p className="mt-2 font-bold text-white">Não foi possível carregar os dados do 2º turno.</p>
-          <p className="mt-1 text-sm text-rose-200/80">Tentaremos de novo automaticamente em {contagem}s.</p>
+          <p className="mt-2 font-bold text-white">{t('pagina.erroTitulo')}</p>
+          <p className="mt-1 text-sm text-rose-200/80">{t('pagina.erroRetentativa', { s: contagem })}</p>
           <button type="button" onClick={atualizarAgora} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-white px-4 text-sm font-bold text-slate-950">
-            <RefreshCw className={`w-4 h-4 ${atualizando ? 'animate-spin' : ''}`} /> Tentar agora
+            <RefreshCw className={`w-4 h-4 ${atualizando ? 'animate-spin' : ''}`} /> {t('pagina.tentarAgora')}
           </button>
         </div>
       ) : (
         <>
           <Segmentado
-            rotulo="Cargo"
+            rotulo={t('pagina.cargo')}
             grande
             className="w-full sm:w-auto"
             valor={aba}
             onChange={setAba}
             opcoes={[
-              { valor: 'presidente', label: 'Presidente', icone: <Vote className="w-4 h-4" /> },
-              { valor: 'governadores', label: `Governadores${governador.length ? ` (${governador.length})` : ''}`, icone: <Landmark className="w-4 h-4" /> },
+              { valor: 'presidente', label: t('pagina.presidente'), icone: <Vote className="w-4 h-4" /> },
+              { valor: 'governadores', label: `${t('pagina.governadores')}${governador.length ? ` (${governador.length})` : ''}`, icone: <Landmark className="w-4 h-4" /> },
             ]}
           />
 
@@ -140,7 +136,7 @@ export default function SegundoTurnoPage({ onStatus }) {
                   onComoCalculamos={abrirMetodologia}
                 />
               ) : (
-                <p className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-slate-400">Placar nacional indisponível.</p>
+                <p className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-slate-400">{t('pagina.placarIndisponivel')}</p>
               )}
 
               {corridaGrafico && (
@@ -149,12 +145,12 @@ export default function SegundoTurnoPage({ onStatus }) {
                   historicoLocal={historico?.[corridaGrafico.id]}
                   modo={modo}
                   ciclo={ciclo}
-                  titulo={`Presidente · ${nomeUf(corridaGrafico.uf, corridaGrafico.nome)}`}
+                  titulo={t('pagina.tituloGrafico', { nome: nomeUf(corridaGrafico.uf, corridaGrafico.nome) })}
                   seletor={opcoesGrafico.length > 1 ? (
                     <select
                       value={corridaGrafico.id}
                       onChange={(e) => setGraficoId(e.target.value)}
-                      aria-label="Corrida exibida no gráfico"
+                      aria-label={t('pagina.seletorGrafico')}
                       className="h-10 max-w-[11rem] rounded-xl bg-slate-950/60 px-3 text-sm text-slate-200 ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-400"
                     >
                       {opcoesGrafico.map((o) => <option key={o.id} value={o.id} className="bg-slate-900">{o.nome}</option>)}
