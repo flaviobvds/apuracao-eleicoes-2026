@@ -60,6 +60,10 @@ app.get('/api/apuracao', async (req, res) => {
     // Calcular projeção matemática a 100% mantendo proporções atuais
     const resultado = calculateProjections(stateRecords, candidatesMeta, nacionalSnapshot);
 
+    // 1º turno encerrado: só o resultado real do TSE vai para o cache longo (a simulação de reserva não)
+    res.set('Cache-Control', currentSource === 'tse'
+      ? 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400'
+      : 'no-store');
     res.json({
       success: true,
       source: currentSource,
@@ -171,6 +175,8 @@ app.get('/api/deputados', async (req, res) => {
     }
 
     const data = await fetchDeputadosUf(uf, cargo);
+    // 1º turno encerrado: resultado final, cache longo na CDN poupa a função e o limite do TSE
+    res.set('Cache-Control', 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400');
     res.json(data);
   } catch (error) {
     console.error('Erro ao buscar deputados:', error);

@@ -155,6 +155,7 @@ function lerOficial(j) {
       secoesApuradas: int(j.s.st),
       secoesTotais: int(j.s.ts),
       eleitorado: int(j.e && j.e.te),
+      eleitoradoApurado: int(j.e && j.e.est),
       comparecimento: int(j.e && j.e.c),
       pctComparecimento: num(j.e && j.e.pc),
       votosValidos: int(j.v && j.v.vv),
@@ -305,8 +306,8 @@ function oficialDosPares(corrida, t2) {
     const d = t2.get(par.key);
     if (!d) continue;
     for (const esc of corrida.cargo === 'presidente' ? ['br', par.uf] : [par.uf]) {
-      const o = (porEscopo[esc] ||= { st: 0, ts: 0, te: 0, c: 0, votos: {} });
-      o.st += d.st; o.ts += d.ts; o.te += d.te; o.c += d.c;
+      const o = (porEscopo[esc] ||= { st: 0, ts: 0, te: 0, est: 0, c: 0, votos: {} });
+      o.st += d.st; o.ts += d.ts; o.te += d.te; o.est += d.est; o.c += d.c;
       for (const [n, v] of Object.entries(d.votos)) o.votos[n] = (o.votos[n] || 0) + v;
     }
   }
@@ -317,8 +318,8 @@ function oficialDosPares(corrida, t2) {
       dataHora: null,
       apuracao: {
         pctSecoes: o.ts ? arred((o.st / o.ts) * 100) : 0,
-        secoesApuradas: o.st, secoesTotais: o.ts, eleitorado: o.te, comparecimento: o.c,
-        pctComparecimento: o.te ? arred((o.c / o.te) * 100) : 0,
+        secoesApuradas: o.st, secoesTotais: o.ts, eleitorado: o.te, eleitoradoApurado: o.est, comparecimento: o.c,
+        pctComparecimento: o.est ? arred((o.c / o.est) * 100) : 0,
         votosValidos: vv, brancos: Math.round((o.c - vv) * 0.4), nulos: Math.round((o.c - vv) * 0.6)
       },
       cands: Object.fromEntries(Object.entries(o.votos).map(([n, v]) => [n, { votos: v, eleito: false }]))
@@ -378,7 +379,7 @@ function corridaJson(corrida, estado, cal, escopo) {
   const r = projetar(pares, cal);
   const oficial = estado.oficial[escopo] || null;
   const apuracao = oficial ? oficial.apuracao : {
-    pctSecoes: 0, secoesApuradas: 0, secoesTotais: 0, eleitorado: 0, comparecimento: 0,
+    pctSecoes: 0, secoesApuradas: 0, secoesTotais: 0, eleitorado: 0, eleitoradoApurado: 0, comparecimento: 0,
     pctComparecimento: 0, votosValidos: 0, brancos: 0, nulos: 0
   };
   const oa = oficial && oficial.cands[n0] ? oficial.cands[n0].votos : r.obs.a;

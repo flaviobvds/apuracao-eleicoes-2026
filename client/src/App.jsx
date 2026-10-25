@@ -66,10 +66,7 @@ export default function App() {
     }
   };
 
-  // Controles de Auto-Refresh
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const [refreshInterval, setRefreshInterval] = useState(10); // segundos
-  const [countdown, setCountdown] = useState(10);
+  // 1º turno encerrado: os dados são finais, sem atualização automática (só o botão manual)
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Carregar dados da API (Padrão Oficial TSE)
@@ -101,23 +98,6 @@ export default function App() {
     fetchData();
   }, [fetchData, activePage]);
 
-  // Ciclo de contagem regressiva para Auto-Refresh
-  useEffect(() => {
-    if (!autoRefresh || activePage !== 'presidente') return;
-
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          fetchData();
-          return refreshInterval;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [autoRefresh, refreshInterval, fetchData, activePage]);
-
   const handleSelectStateFromRegion = (uf) => {
     setTargetUf(uf);
     setViewMode('estado');
@@ -125,7 +105,6 @@ export default function App() {
 
   const handleManualRefresh = () => {
     fetchData(true);
-    setCountdown(refreshInterval);
   };
 
   if (activePage === 'segundo-turno') {
@@ -176,14 +155,6 @@ export default function App() {
           setViewMode(mode);
           if (mode === 'regiao') setTargetUf(null);
         }}
-        autoRefresh={autoRefresh}
-        onToggleAutoRefresh={() => setAutoRefresh(prev => !prev)}
-        refreshInterval={refreshInterval}
-        onChangeRefreshInterval={(sec) => {
-          setRefreshInterval(sec);
-          setCountdown(sec);
-        }}
-        countdown={countdown}
         onManualRefresh={handleManualRefresh}
         isRefreshing={isRefreshing}
         lastUpdated={data?.lastUpdated}

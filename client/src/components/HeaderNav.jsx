@@ -1,5 +1,5 @@
 import React from 'react';
-import { RefreshCw, Radio, Layers, MapPin, Vote, Users } from 'lucide-react';
+import { RefreshCw, Layers, MapPin, Vote, Users } from 'lucide-react';
 
 export default function HeaderNav({
   activePage = 'presidente',
@@ -7,11 +7,6 @@ export default function HeaderNav({
   segundoTurnoStatus = null,
   viewMode,
   onChangeViewMode,
-  autoRefresh,
-  onToggleAutoRefresh,
-  refreshInterval,
-  onChangeRefreshInterval,
-  countdown,
   onManualRefresh,
   isRefreshing,
   lastUpdated
@@ -119,38 +114,6 @@ export default function HeaderNav({
                 >
                   Estado (UF)
                 </button>
-              </div>
-            )}
-
-            {/* Configuração de Auto-Refresh */}
-            {activePage === 'presidente' && (
-              <div className="flex items-center gap-1.5 bg-slate-800/80 border border-slate-700 rounded-xl px-2.5 py-1 text-xs">
-                <button
-                  onClick={onToggleAutoRefresh}
-                  className={`flex items-center gap-1 font-semibold transition-colors cursor-pointer ${
-                    autoRefresh ? 'text-emerald-400' : 'text-slate-400'
-                  }`}
-                  title={autoRefresh ? 'Pausar auto-atualização' : 'Ativar auto-atualização'}
-                >
-                  <Radio className={`w-3.5 h-3.5 ${autoRefresh ? 'animate-pulse text-emerald-400' : ''}`} />
-                  {autoRefresh ? (
-                    <span>Auto: {countdown}s</span>
-                  ) : (
-                    <span>Pausado</span>
-                  )}
-                </button>
-
-                {autoRefresh && (
-                  <select
-                    value={refreshInterval}
-                    onChange={(e) => onChangeRefreshInterval(Number(e.target.value))}
-                    className="bg-transparent text-slate-300 focus:outline-none cursor-pointer border-l border-slate-700 pl-1.5 text-[11px]"
-                  >
-                    <option value={5} className="bg-slate-900">5s</option>
-                    <option value={10} className="bg-slate-900">10s</option>
-                    <option value={30} className="bg-slate-900">30s</option>
-                  </select>
-                )}
               </div>
             )}
 

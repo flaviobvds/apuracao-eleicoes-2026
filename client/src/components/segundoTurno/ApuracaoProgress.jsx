@@ -35,7 +35,11 @@ export default function ApuracaoProgress({ pct, tamanho = 112, espessura = 10, r
         <span className={`font-black tabular-nums text-white ${tamanho >= 100 ? 'text-2xl' : 'text-base'}`}>
           {fmtDec(valor, valor >= 100 ? 0 : 2)}%
         </span>
-        {tamanho >= 100 && <span className="mt-1 text-[10px] uppercase tracking-wider text-slate-400">{rotulo}</span>}
+        {tamanho >= 100 && (
+          <span className="mt-1 max-w-[62%] text-[9px] font-semibold uppercase leading-tight tracking-wide text-slate-400">
+            {rotulo}
+          </span>
+        )}
       </div>
     </div>
   );

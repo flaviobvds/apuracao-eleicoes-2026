@@ -147,6 +147,7 @@ function corrida({ id, cargo, uf, nome, candidatos, eleitorado, base, swing, pct
       secoesApuradas: Math.round(secoesTotais * f),
       secoesTotais,
       eleitorado: Math.round(eleitorado),
+      eleitoradoApurado: Math.round(eleitorado * f),
       comparecimento: comecou ? Math.round(comparecimentoTotal * f) : 0,
       pctComparecimento: comecou ? r2(pctComparecimento) : null,
       votosValidos: Math.round(vApur),

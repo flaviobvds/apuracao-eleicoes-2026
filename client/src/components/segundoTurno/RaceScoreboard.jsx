@@ -3,7 +3,7 @@ import { BadgeCheck, Calculator, Clock, Hourglass } from 'lucide-react';
 import TugRow from './TugRow';
 import ApuracaoProgress from './ApuracaoProgress';
 import {
-  candidatosDe, clarear, coresCorrida, fmtDuracao, fmtHora, fmtNum, fmtPct, fmtPp, horaTse,
+  candidatosDe, clarear, coresCorrida, fmtDuracao, fmtHora, fmtNum, fmtParteDeTotal, fmtPct, fmtPp, horaTse,
   isNum, metricaDestaque, nomeUf, parPct,
 } from './utils';
 
@@ -86,6 +86,7 @@ function Indicadores({ race, tseDataHora, cores, mostrarPre = true }) {
   const favorecido = isNum(v) ? (v >= 0 ? c0 : c1) : null;
   const itens = [
     ['Seções apuradas', isNum(ap.secoesTotais) ? `${fmtNum(ap.secoesApuradas)} de ${fmtNum(ap.secoesTotais)}` : '—'],
+    ['Eleitorado apurado', isNum(ap.eleitoradoApurado) ? fmtParteDeTotal(ap.eleitoradoApurado, ap.eleitorado) : '—'],
     ['Comparecimento', isNum(ap.pctComparecimento) ? `${fmtPct(ap.pctComparecimento)}${isNum(ap.comparecimento) && ap.comparecimento > 0 ? ` · ${fmtNum(ap.comparecimento)}` : ''}` : '—'],
     ['Atualização do TSE', horaTse(tseDataHora) || '—'],
   ];

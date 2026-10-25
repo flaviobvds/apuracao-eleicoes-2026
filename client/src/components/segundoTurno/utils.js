@@ -33,6 +33,15 @@ export function fmtNum(v) {
   return Math.round(v).toLocaleString('pt-BR');
 }
 
+// "23,05 mi de 158,75 mi": as duas quantidades na escala do total (milhões ou milhares)
+export function fmtParteDeTotal(parte, total) {
+  if (!isNum(parte) || !isNum(total) || total <= 0) return '—';
+  const [div, sufixo, casas] = total >= 1e6 ? [1e6, 'mi', 2] : [1e3, 'mil', 1];
+  const f = (v) => (v / div).toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas });
+  // espaço inseparável entre número e unidade: só quebra linha em volta do "de"
+  return `${f(parte)} ${sufixo} de ${f(total)} ${sufixo}`;
+}
+
 export function fmtDec(v, digits = 2) {
   if (!isNum(v)) return '—';
   return v.toLocaleString('pt-BR', { minimumFractionDigits: digits, maximumFractionDigits: digits });
