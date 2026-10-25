@@ -40,7 +40,9 @@ export default function HeaderNav({
             </div>
           </div>
 
-          {/* Abas Principais de Navegação: Segundo Turno, Presidente (1º turno) e Deputados */}
+          {/* Abas Principais de Navegação: Segundo Turno, Presidente (1º turno) e Deputados.
+              Na página do 2º turno (inicial) ficam ocultas; as do 1º turno seguem nas suas URLs. */}
+          {activePage !== 'segundo-turno' && (
           <div className="flex w-full max-w-full items-center gap-0.5 overflow-x-auto bg-slate-800/90 p-1 rounded-xl border border-slate-700/80 shadow-inner lg:w-auto">
             <button
               onClick={() => onChangePage && onChangePage('segundo-turno')}
@@ -88,6 +90,7 @@ export default function HeaderNav({
               <span className="hidden sm:inline">Deputados (Câmara & Assembleias)</span>
             </button>
           </div>
+          )}
 
           {/* Controles da Direita */}
           <div className="flex items-center gap-3">

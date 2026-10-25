@@ -12,8 +12,9 @@ function isSegundoTurno(value) {
   return /segundo-?turno|2-?turno/.test(value);
 }
 
+// O 2º turno é a página inicial; 1º turno (/primeiro-turno) e deputados (/deputados) seguem nas suas URLs.
 function getPageFromLocation() {
-  if (typeof window === 'undefined') return 'presidente';
+  if (typeof window === 'undefined') return 'segundo-turno';
   const path = window.location.pathname.toLowerCase();
   const search = new URLSearchParams(window.location.search);
   const pageParam = (search.get('page') || search.get('pagina') || '').toLowerCase();
@@ -25,7 +26,11 @@ function getPageFromLocation() {
   if (path.includes('deputado') || pageParam.includes('deputado') || hash.includes('deputado')) {
     return 'deputados';
   }
-  return 'presidente';
+  const primeiroTurno = /primeiro-?turno|1-?turno|presidente/;
+  if (primeiroTurno.test(path) || primeiroTurno.test(pageParam) || primeiroTurno.test(hash)) {
+    return 'presidente';
+  }
+  return 'segundo-turno';
 }
 
 export default function App() {
@@ -56,13 +61,13 @@ export default function App() {
         if (atual.get(k)) q.set(k, atual.get(k));
       });
       const qs = q.toString();
-      window.history.pushState({ page: 'segundo-turno' }, '', `/segundo-turno${qs ? `?${qs}` : ''}`);
+      window.history.pushState({ page: 'segundo-turno' }, '', `/${qs ? `?${qs}` : ''}`);
       window.scrollTo(0, 0);
     } else if (newPage === 'deputados') {
       const search = window.location.search;
       window.history.pushState({ page: 'deputados' }, '', `/deputados${search}`);
     } else {
-      window.history.pushState({ page: 'presidente' }, '', '/');
+      window.history.pushState({ page: 'presidente' }, '', '/primeiro-turno');
     }
   };
 

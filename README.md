@@ -2,8 +2,10 @@
 
 Aplicação web interativa para acompanhamento em tempo real da apuração das **Eleições Gerais de 2026**, conectada aos dados oficiais do Tribunal Superior Eleitoral (TSE).
 
-> 🌐 **Aplicação Online no Vercel**:  
+> 🌐 **Aplicação Online no Vercel (página inicial = 2º turno)**:  
 > 👉 **[https://projecao-eleicoes-2026.vercel.app/](https://projecao-eleicoes-2026.vercel.app/)**  
+> 🗂️ **Presidente 1º turno**:  
+> 👉 **[https://projecao-eleicoes-2026.vercel.app/primeiro-turno](https://projecao-eleicoes-2026.vercel.app/primeiro-turno)**  
 > 👥 **Acesso Direto à Página de Deputados**:  
 > 👉 **[https://projecao-eleicoes-2026.vercel.app/deputados](https://projecao-eleicoes-2026.vercel.app/deputados)**  
 > 🗳️ **Segundo Turno (presidente e governadores)**:  
