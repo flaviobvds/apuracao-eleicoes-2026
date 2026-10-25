@@ -9,6 +9,7 @@
  */
 
 const { calibrar, projetar } = require('./segundoTurnoProjecao');
+const { gravarSnapshot } = require('./historicoStore');
 const { CANDIDATE_METADATA } = require('./tseService');
 const T1_PRESIDENTE = require('../data/segundoTurno/primeiroTurnoPresidente.json');
 const T1_GOVERNADOR = require('../data/segundoTurno/primeiroTurnoGovernador.json');
@@ -456,6 +457,7 @@ async function obterSnapshot({ simular } = {}) {
     const diag = await atualizarTudo();
     ultimoSnapshot = montarSnapshot(null, null, diag);
     ultimoSnapshotEm = Date.now();
+    await gravarSnapshot(ultimoSnapshot);
     return ultimoSnapshot;
   });
 }

@@ -5,6 +5,7 @@ const { SimulationEngine, SCENARIOS } = require('./services/simulationEngine');
 const { calculateProjections } = require('./services/projectionCalculator');
 const { checkTseLiveStatus, fetchAllStatesFromTse } = require('./services/tseService');
 const { obterSnapshot, obterDetalheUf, obterIndice, lerSimulacao } = require('./services/segundoTurnoService');
+const { lerHistorico } = require('./services/historicoStore');
 const { DEFAULT_CANDIDATES_2026 } = require('./data/brazilElectoralData');
 
 const app = express();
@@ -196,6 +197,21 @@ app.get('/api/segundo-turno', async (req, res) => {
 app.get('/api/segundo-turno/indice', (req, res) => {
   res.set('Cache-Control', 'public, max-age=3600, s-maxage=86400');
   res.json(obterIndice());
+});
+
+app.get('/api/segundo-turno/historico', async (req, res) => {
+  const corrida = String(req.query.corrida || '');
+  if (!/^(presidente|governador)-[a-z]{2}$/.test(corrida)) {
+    return res.status(400).json({ success: false, error: 'corrida inválida' });
+  }
+  try {
+    const { disponivel, pontos } = await lerHistorico(corrida);
+    res.set('Cache-Control', disponivel ? 'public, max-age=0, s-maxage=30, stale-while-revalidate=60' : 'public, max-age=0, s-maxage=60');
+    res.json({ success: true, disponivel, corrida, pontos });
+  } catch (error) {
+    console.error('Erro ao ler histórico do 2º turno:', error.message);
+    res.status(502).json({ success: false, disponivel: false, corrida, pontos: [] });
+  }
 });
 
 app.get('/api/segundo-turno/uf/:uf', async (req, res) => {
