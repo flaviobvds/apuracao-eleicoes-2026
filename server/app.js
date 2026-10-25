@@ -4,6 +4,7 @@ const path = require('path');
 const { SimulationEngine, SCENARIOS } = require('./services/simulationEngine');
 const { calculateProjections } = require('./services/projectionCalculator');
 const { checkTseLiveStatus, fetchAllStatesFromTse } = require('./services/tseService');
+const { obterSnapshot, obterDetalheUf, obterIndice, lerSimulacao } = require('./services/segundoTurnoService');
 const { DEFAULT_CANDIDATES_2026 } = require('./data/brazilElectoralData');
 
 const app = express();
@@ -177,6 +178,56 @@ app.get('/api/deputados', async (req, res) => {
 });
 
 // Servir arquivos estáticos do frontend em produção se compilado
+/**
+ * 2º turno: projeções por par município × zona (métricas 1 e 2), detalhe por UF e índice para a busca.
+ * O cache da CDN (s-maxage + stale-while-revalidate) faz uma única função atualizar os dados por vez.
+ */
+app.get('/api/segundo-turno', async (req, res) => {
+  try {
+    const dados = await obterSnapshot({ simular: req.query.simular });
+    res.set('Cache-Control', dados.simulacao ? 'public, max-age=0, s-maxage=300' : 'public, max-age=0, s-maxage=15, stale-while-revalidate=45');
+    res.json(dados);
+  } catch (error) {
+    console.error('Erro no 2º turno:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.get('/api/segundo-turno/indice', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=3600, s-maxage=86400');
+  res.json(obterIndice());
+});
+
+app.get('/api/segundo-turno/uf/:uf', async (req, res) => {
+  try {
+    const dados = await obterDetalheUf(req.params.uf, req.query.cargo, { simular: req.query.simular });
+    if (!dados) return res.status(404).json({ success: false, error: 'UF ou cargo sem 2º turno' });
+    res.set('Cache-Control', lerSimulacao(req.query.simular) !== null ? 'public, max-age=0, s-maxage=300' : 'public, max-age=0, s-maxage=20, stale-while-revalidate=40');
+    res.json(dados);
+  } catch (error) {
+    console.error('Erro no detalhe do 2º turno:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// TEMPORÁRIO: mede a vazão de leitura do TSE a partir da região da função (remover após o teste)
+app.get('/api/segundo-turno/teste-vazao', async (req, res) => {
+  const pres = require('./data/segundoTurno/primeiroTurnoPresidente.json');
+  const urls = Object.values(pres.pares).slice(0, 600).map(p =>
+    `https://resultados.tse.jus.br/oficial/ele2026/6257/dados/${p.uf}/${p.uf}${p.mun}-z${p.z}-c0001-e006257-u.json`);
+  const inicio = Date.now();
+  let ok = 0, falhas = 0, i = 0;
+  await Promise.all(Array.from({ length: 64 }, async () => {
+    while (i < urls.length) {
+      const url = urls[i++];
+      try { const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 TSE-Apuracao-2026/1.0' } }); await r.arrayBuffer(); r.ok ? ok++ : falhas++; } catch { falhas++; }
+    }
+  }));
+  const ms = Date.now() - inicio;
+  res.set('Cache-Control', 'no-store');
+  res.json({ ok, falhas, ms, reqPorSeg: Math.round((ok + falhas) / (ms / 1000)), regiao: process.env.VERCEL_REGION || null });
+});
+
 const clientDistPath = path.join(__dirname, '../client/dist');
 app.use(express.static(clientDistPath));
 
