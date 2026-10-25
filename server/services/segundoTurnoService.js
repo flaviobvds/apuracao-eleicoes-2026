@@ -19,6 +19,7 @@ const INICIO_APURACAO = '2026-10-25T20:00:00.000Z'; // 17h de Brasília
 // Acima de ~100 conexões simultâneas o TSE responde 429 para o IP inteiro (testado da Vercel em 25/10)
 const CONCORRENCIA = 32;
 const ESPERA_APOS_429_MS = 30000;
+const MAX_PARES_POR_CICLO = 3000;
 const PRAZO_ATUALIZACAO_MS = 35000;
 const VALIDADE_SNAPSHOT_MS = 20000;
 const VALIDADE_UF_MS = 20000;
@@ -206,9 +207,12 @@ async function lerAbrangencia(corrida, uf) {
  * Busca os pares dos municípios informados, do lido há mais tempo para o mais recente, até o prazo.
  * Um município só é marcado como lido quando todos os seus pares vieram; senão volta no próximo ciclo.
  */
-async function buscarPares(tarefas, prazo, diag) {
+async function buscarPares(tarefas, prazo, diag, limite = Infinity) {
   tarefas.sort((a, b) => (a.corrida.vivo.lidoEm.get(a.chaveMun) || 0) - (b.corrida.vivo.lidoEm.get(b.chaveMun) || 0));
-  await Promise.all(tarefas.map(async t => {
+  let soma = 0;
+  const desteCiclo = tarefas.filter(t => (soma += t.pares.length) <= limite || soma === t.pares.length);
+  diag.pendentes += tarefas.slice(desteCiclo.length).reduce((s, t) => s + t.pares.length, 0);
+  await Promise.all(desteCiclo.map(async t => {
     const { corrida, uf } = t;
     const lidos = await Promise.all(t.pares.map(par =>
       getJson(urlDados(corrida, uf, `${uf}${par.mun}-z${par.z}-${corrida.codCargo}-e00${corrida.eleicao}-u.json`), prazo)
@@ -244,7 +248,7 @@ async function atualizarTudo() {
     .then(j => { if (j) PRESIDENTE.vivo.oficial.br = lerOficial(j); })
     .catch(() => {});
   const listas = await Promise.all(TODAS.flatMap(c => c.ufs.map(uf => lerAbrangencia(c, uf).catch(() => []))));
-  await buscarPares(listas.flat(), prazo, diag);
+  await buscarPares(listas.flat(), prazo, diag, MAX_PARES_POR_CICLO);
   await br;
   const agora = Date.now();
   for (const c of TODAS) for (const uf of c.ufs) c.vivo.atualizadoUf[uf] = agora;
