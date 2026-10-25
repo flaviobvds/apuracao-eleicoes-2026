@@ -221,9 +221,19 @@ async function buscarPares(tarefas, prazo, diag, limite = Infinity) {
         .then(j => (j === PULADO ? null : (diag.consultados++, j ? { par, dado: lerPar(j) } : null)))
         .catch(() => null)));
     let completo = true;
+    let stPares = 0;
     for (const l of lidos) {
-      if (l) corrida.vivo.t2.set(l.par.key, l.dado);
-      else completo = false;
+      if (l) {
+        corrida.vivo.t2.set(l.par.key, l.dado);
+        stPares += l.dado.st;
+      } else {
+        completo = false;
+      }
+    }
+    // Os arquivos por zona podem sair depois da abrangência: só marca como lido quando as zonas já somam as seções do município
+    if (completo && stPares < t.st) {
+      completo = false;
+      diag.atrasados = (diag.atrasados || 0) + 1;
     }
     if (completo) {
       corrida.vivo.munSt.set(t.chaveMun, t.st);
@@ -433,6 +443,7 @@ function montarSnapshot(simulado, pctAlvo, diag) {
       paresTotal: TODAS.reduce((s, c) => s + c.pares.length, 0),
       paresConsultados: diag ? diag.consultados : 0,
       paresPendentes: diag ? diag.pendentes : 0,
+      municipiosAtrasados: diag ? diag.atrasados || 0 : 0,
       duracaoMs: diag ? diag.duracaoMs : 0
     }
   };
