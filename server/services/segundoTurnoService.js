@@ -73,7 +73,7 @@ function montarCorrida(id, cargo, eleicao, codCargo, t1, ufs, numeros) {
   return {
     id, cargo, eleicao, codCargo, ufs, numeros, pares, paresPorMun,
     municipios: t1.municipios,
-    vivo: { t2: new Map(), munSt: new Map(), oficial: {}, atualizadoUf: {} }
+    vivo: { t2: new Map(), munSt: new Map(), lidoEm: new Map(), oficial: {}, atualizadoUf: {} }
   };
 }
 
@@ -173,42 +173,58 @@ function unico(chave, fn) {
   return emAndamento.get(chave);
 }
 
-/** Atualiza uma UF de uma corrida: arquivo oficial da UF, abrangência e pares dos municípios que mudaram. */
+/** Lê o arquivo oficial e a abrangência de uma UF e devolve os municípios cujo nº de seções totalizadas mudou. */
+async function lerAbrangencia(corrida, uf) {
+  const vivo = corrida.vivo;
+  const [oficial, ab] = await Promise.all([
+    getJson(urlDados(corrida, uf, `${uf}-${corrida.codCargo}-e00${corrida.eleicao}-u.json`)).catch(() => null),
+    getJson(urlDados(corrida, uf, `${uf}-e00${corrida.eleicao}-ab.json`)).catch(() => null)
+  ]);
+  if (oficial) vivo.oficial[uf] = lerOficial(oficial);
+  if (!ab || !ab.abr) return [];
+
+  const tarefas = [];
+  for (const m of ab.abr) {
+    if (m.tpabr !== 'mun') continue;
+    const chaveMun = uf + m.cdabr;
+    const st = int(m.s && m.s.st);
+    if (st === 0 || vivo.munSt.get(chaveMun) === st) continue;
+    tarefas.push({ corrida, uf, chaveMun, st, pares: corrida.paresPorMun[chaveMun] || [] });
+  }
+  return tarefas;
+}
+
+/**
+ * Busca os pares dos municípios informados, do lido há mais tempo para o mais recente, até o prazo.
+ * Um município só é marcado como lido quando todos os seus pares vieram; senão volta no próximo ciclo.
+ */
+async function buscarPares(tarefas, prazo, diag) {
+  tarefas.sort((a, b) => (a.corrida.vivo.lidoEm.get(a.chaveMun) || 0) - (b.corrida.vivo.lidoEm.get(b.chaveMun) || 0));
+  await Promise.all(tarefas.map(async t => {
+    const { corrida, uf } = t;
+    const lidos = await Promise.all(t.pares.map(par =>
+      getJson(urlDados(corrida, uf, `${uf}${par.mun}-z${par.z}-${corrida.codCargo}-e00${corrida.eleicao}-u.json`), prazo)
+        .then(j => (j === PULADO ? null : (diag.consultados++, j ? { par, dado: lerPar(j) } : null)))
+        .catch(() => null)));
+    let completo = true;
+    for (const l of lidos) {
+      if (l) corrida.vivo.t2.set(l.par.key, l.dado);
+      else completo = false;
+    }
+    if (completo) {
+      corrida.vivo.munSt.set(t.chaveMun, t.st);
+      corrida.vivo.lidoEm.set(t.chaveMun, Date.now());
+    } else {
+      diag.pendentes += lidos.filter(l => !l).length;
+    }
+  }));
+}
+
+/** Atualiza só uma UF de uma corrida (detalhe da UF). */
 function atualizarUf(corrida, uf, prazo, diag) {
   return unico(`${corrida.id}:${uf}`, async () => {
-    const vivo = corrida.vivo;
-    const [oficial, ab] = await Promise.all([
-      getJson(urlDados(corrida, uf, `${uf}-${corrida.codCargo}-e00${corrida.eleicao}-u.json`)).catch(() => null),
-      getJson(urlDados(corrida, uf, `${uf}-e00${corrida.eleicao}-ab.json`)).catch(() => null)
-    ]);
-    if (oficial) vivo.oficial[uf] = lerOficial(oficial);
-    if (!ab || !ab.abr) return;
-
-    const tarefas = [];
-    for (const m of ab.abr) {
-      if (m.tpabr !== 'mun') continue;
-      const chaveMun = uf + m.cdabr;
-      const st = int(m.s && m.s.st);
-      if (st === 0 || vivo.munSt.get(chaveMun) === st) continue;
-      const pares = corrida.paresPorMun[chaveMun] || [];
-      tarefas.push({ chaveMun, st, pares });
-    }
-
-    await Promise.all(tarefas.map(async t => {
-      const lidos = await Promise.all(t.pares.map(par =>
-        getJson(urlDados(corrida, uf, `${uf}${par.mun}-z${par.z}-${corrida.codCargo}-e00${corrida.eleicao}-u.json`), prazo)
-          .then(j => (j === PULADO ? null : (diag.consultados++, j ? { par, dado: lerPar(j) } : null)))
-          .catch(() => null)));
-      let completo = true;
-      for (const l of lidos) {
-        if (l) vivo.t2.set(l.par.key, l.dado);
-        else completo = false;
-      }
-      // Município só é marcado como lido quando todos os seus pares vieram; senão é buscado de novo no próximo ciclo
-      if (completo) vivo.munSt.set(t.chaveMun, t.st);
-      else diag.pendentes += lidos.filter(l => !l).length;
-    }));
-    vivo.atualizadoUf[uf] = Date.now();
+    await buscarPares(await lerAbrangencia(corrida, uf), prazo, diag);
+    corrida.vivo.atualizadoUf[uf] = Date.now();
   });
 }
 
@@ -216,13 +232,15 @@ async function atualizarTudo() {
   const inicio = Date.now();
   const prazo = inicio + PRAZO_ATUALIZACAO_MS;
   const diag = { consultados: 0, pendentes: 0 };
-  const tarefas = [];
-  tarefas.push(getJson(urlDados(PRESIDENTE, 'br', `br-c0001-e00${PRESIDENTE.eleicao}-u.json`))
+  const br = getJson(urlDados(PRESIDENTE, 'br', `br-c0001-e00${PRESIDENTE.eleicao}-u.json`))
     .then(j => { if (j) PRESIDENTE.vivo.oficial.br = lerOficial(j); })
-    .catch(() => {}));
-  for (const corrida of TODAS) for (const uf of corrida.ufs) tarefas.push(atualizarUf(corrida, uf, prazo, diag));
-  await Promise.all(tarefas);
-  return { ...diag, duracaoMs: Date.now() - inicio };
+    .catch(() => {});
+  const listas = await Promise.all(TODAS.flatMap(c => c.ufs.map(uf => lerAbrangencia(c, uf).catch(() => []))));
+  await buscarPares(listas.flat(), prazo, diag);
+  await br;
+  const agora = Date.now();
+  for (const c of TODAS) for (const uf of c.ufs) c.vivo.atualizadoUf[uf] = agora;
+  return { ...diag, duracaoMs: agora - inicio };
 }
 
 // ---------------------------------------------------------------------------
