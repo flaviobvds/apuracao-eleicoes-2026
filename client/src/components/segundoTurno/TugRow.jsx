@@ -17,6 +17,8 @@ export default function TugRow({
   vazio,
   tag = null,
   compacto = false,
+  sutil = false, // linha de referência (1º turno): mais apagada, separada por um traço
+  nota = null,
 }) {
   const { t } = useI18n();
   const vazioTxt = vazio === undefined ? t('tugRow.aguardandoDados') : vazio;
@@ -31,7 +33,7 @@ export default function TugRow({
     : compacto ? 'text-sm' : 'text-base sm:text-lg';
 
   return (
-    <div className={destaque ? 'rounded-xl bg-white/[0.03] ring-1 ring-white/10 px-3 py-2.5 -mx-1 sm:-mx-3 sm:px-3' : ''}>
+    <div className={destaque ? 'rounded-xl bg-white/[0.03] ring-1 ring-white/10 px-3 py-2.5 -mx-1 sm:-mx-3 sm:px-3' : sutil ? 'border-t border-dashed border-white/10 pt-3 opacity-70' : ''}>
       <div className="flex items-center justify-between gap-2 min-w-0">
         <span className={`truncate font-semibold ${destaque ? 'text-slate-100 text-xs sm:text-sm' : 'text-slate-400 text-[11px] sm:text-xs'} uppercase tracking-wide`}>
           {label}
@@ -83,6 +85,7 @@ export default function TugRow({
       {!ok && !tag && vazioTxt && (
         <p className="mt-1 text-[11px] text-slate-500">{vazioTxt}</p>
       )}
+      {nota && <p className="mt-1 text-[11px] text-slate-400 tabular-nums">{nota}</p>}
       <span className="sr-only">
         {ok
           ? `${label}: ${candidatos[0]?.nome} ${fmtPct(p0)}, ${candidatos[1]?.nome} ${fmtPct(p1)}`

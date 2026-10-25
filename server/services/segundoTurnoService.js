@@ -395,6 +395,13 @@ function corridaJson(corrida, estado, cal, escopo) {
   const oa = oficial && oficial.cands[n0] ? oficial.cands[n0].votos : r.obs.a;
   const ob = oficial && oficial.cands[n1] ? oficial.cands[n1].votos : r.obs.b;
   const vObs = r.obs.a + r.obs.b;
+  // 1º turno dos dois finalistas no escopo: % entre os dois e % sobre todos os votos válidos
+  const t1 = pares.reduce((s, p) => ({ a: s.a + p.t1.a, b: s.b + p.t1.b, vv: s.vv + p.t1.vv }), { a: 0, b: 0, vv: 0 });
+  const primeiroTurno = paraPct(t1.a, t1.b, n0, n1);
+  if (t1.vv > 0) {
+    primeiroTurno[n0].pctValidos = arred((t1.a / t1.vv) * 100);
+    primeiroTurno[n1].pctValidos = arred((t1.b / t1.vv) * 100);
+  }
   return {
     id: `${corrida.cargo}-${escopo}`,
     cargo: corrida.cargo,
@@ -406,6 +413,7 @@ function corridaJson(corrida, estado, cal, escopo) {
     metrica1: paraPct(r.m1.a, r.m1.b, n0, n1),
     metrica1PreApuracao: paraPct(r.pre.a, r.pre.b, n0, n1, false),
     metrica2: paraPct(r.m2.a, r.m2.b, n0, n1),
+    primeiroTurno,
     variacaoPp: vObs > 0 ? arred(((r.obs.a - r.obs.s1w) / vObs) * 100) : null,
     pares: { total: pares.length, comApuracao: r.comApuracao, completos: r.completos }
   };

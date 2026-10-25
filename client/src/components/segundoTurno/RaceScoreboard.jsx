@@ -154,6 +154,18 @@ export default function RaceScoreboard({
     { key: 'metrica1', label: t('raceScoreboard.metrica1'), valores: parPct(race, 'metrica1'), vazio: t('raceScoreboard.semDados') },
     { key: 'metrica2', label: t('raceScoreboard.metrica2'), valores: aguardando ? [null, null] : parPct(race, 'metrica2'), tag: aguardando ? t('raceScoreboard.comecaComApuracao') : null, vazio: t('raceScoreboard.semDados'), destaque: !aguardando && !encerrada },
   ];
+  // Referência: o 1º turno só entre os dois finalistas, com a votação sobre todos os válidos na nota
+  const t1 = parPct(race, 'primeiroTurno');
+  if (isNum(t1[0])) {
+    const pv = candidatos.map((c) => race.primeiroTurno?.[c.numero]?.pctValidos);
+    linhas.push({
+      key: 'primeiroTurno',
+      label: t('raceScoreboard.primeiroTurno'),
+      valores: t1,
+      sutil: true,
+      nota: pv.every(isNum) ? t('raceScoreboard.primeiroTurnoNota', { a: fmtPct(pv[0]), b: fmtPct(pv[1]) }) : null,
+    });
+  }
 
   const cargoTxt = race.cargo === 'governador' ? t('raceScoreboard.governador') : t('raceScoreboard.presidente');
   const tituloTxt = titulo || `${cargoTxt} · ${nomeUf(race.uf, race.nome)}`;
@@ -225,6 +237,8 @@ export default function RaceScoreboard({
                 destaque={l.destaque}
                 vazio={l.vazio}
                 tag={l.tag}
+                sutil={l.sutil}
+                nota={l.nota}
               />
             ))}
           </div>
