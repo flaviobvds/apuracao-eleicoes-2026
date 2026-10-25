@@ -276,18 +276,26 @@ export function buildMockHistorico(race, now = Date.now()) {
   if (now - inicio < 30 * MIN || now - inicio > 10 * 3600 * 1000) inicio = now - 120 * MIN;
   const total = Math.max(2, Math.floor((now - inicio) / MIN));
   const rand = rng(`hist-${race.id}`);
-  const offOf = (rand() < 0.5 ? -1 : 1) * (3 + rand() * 5);
-  const offM = (rand() - 0.5) * 2.5;
   const norm = (x, k) => (Math.exp(-k * x) - Math.exp(-k)) / (1 - Math.exp(-k));
+  const K_OF = 1.5;
+  // Corridas apertadas (|oficial - 50| <= 6) ganham uma virada no meio da curva: o oficial começa do
+  // outro lado de 50% e cruza em f = 0,5, sem ruído perto do cruzamento (uma virada só).
+  const forcarVirada = fim.of != null && Math.abs(fim.of - 50) <= 6 && Math.abs(fim.of - 50) > 0.05;
+  const offOf = forcarVirada
+    ? (50 - fim.of) / norm(0.5, K_OF)
+    : (rand() < 0.5 ? -1 : 1) * (3 + rand() * 5);
+  const offM = (rand() - 0.5) * 2.5;
   const pts = [];
   for (let i = 0; i < total; i++) {
     const f = (i + 1) / total;
     const pct = pctAtual * (1 - Math.exp(-2.5 * f)) / (1 - Math.exp(-2.5));
     const decai = norm(f, 4);
     const ruido = () => (rand() - 0.5);
-    const of = fim.of != null ? clamp(fim.of + offOf * decai + ruido() * 1.6 * (1 - f), 1, 99) : null;
-    const m1 = fim.m1 != null ? clamp(fim.m1 + offM * 0.4 * decai + ruido() * 0.15, 1, 99) : null;
-    const m2 = fim.m2 != null ? clamp(fim.m2 + offM * decai + ruido() * 0.3 * (1 - f), 1, 99) : null;
+    // ruído nunca maior que a distância da tendência até 50%: só a tendência produz virada
+    const comRuido = (tend, amp) => tend + ruido() * amp * Math.min(1, Math.abs(tend - 50) / 1.5);
+    const of = fim.of != null ? clamp(comRuido(fim.of + offOf * norm(f, K_OF), 1.0 * (1 - f)), 1, 99) : null;
+    const m1 = fim.m1 != null ? clamp(comRuido(fim.m1 + offM * 0.4 * decai, 0.15), 1, 99) : null;
+    const m2 = fim.m2 != null ? clamp(comRuido(fim.m2 + offM * decai, 0.3 * (1 - f)), 1, 99) : null;
     pts.push([inicio + i * MIN, r2(Math.min(pct, pctAtual)), of != null ? r2(of) : null, m1 != null ? r2(m1) : null, m2 != null ? r2(m2) : null]);
   }
   return pts;

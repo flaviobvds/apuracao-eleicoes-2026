@@ -1,116 +1,149 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  CartesianGrid, Line, LineChart, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
-import { LineChart as IconeGrafico } from 'lucide-react';
+import { ArrowLeftRight, LineChart as IconeGrafico } from 'lucide-react';
 import { useHistoricoServidor } from './useHistoricoServidor';
 import { candidatosDe, clarear, coresCorrida, fmtDec, fmtHora, fmtPct, isNum } from './utils';
 
-const LINHAS = [
-  { key: 'oficial', nome: 'Apurado (TSE)', cor: '#e2e8f0', largura: 2, tracejado: undefined },
-  { key: 'm1', nome: 'Métrica 1', cor: '#fbbf24', largura: 2, tracejado: '5 4' },
-  { key: 'm2', nome: 'Métrica 2', cor: '#34d399', largura: 3, tracejado: undefined },
+// Fonte das duas linhas: índice no ponto compacto [t, pctSecoes, oficial, metrica1, metrica2]
+const FONTES = [
+  { valor: 'oficial', label: 'Apurado (TSE)', idx: 2 },
+  { valor: 'm1', label: 'Métrica 1', idx: 3 },
+  { valor: 'm2', label: 'Métrica 2', idx: 4 },
 ];
 
-const CHAVE_LINHAS = 'segundoTurno2026:linhasGrafico:v1';
-const TODAS = { oficial: true, m1: true, m2: true };
+const CHAVE_FONTE = 'segundoTurno2026:fonteGrafico:v1';
 
-function lerLinhas() {
+function lerFonte() {
   try {
-    const obj = JSON.parse(window.localStorage.getItem(CHAVE_LINHAS) || 'null');
-    if (!obj || typeof obj !== 'object') return TODAS;
-    const v = { oficial: obj.oficial !== false, m1: obj.m1 !== false, m2: obj.m2 !== false };
-    return v.oficial || v.m1 || v.m2 ? v : TODAS;
+    const v = window.localStorage.getItem(CHAVE_FONTE);
+    return FONTES.some((f) => f.valor === v) ? v : 'oficial';
   } catch {
-    return TODAS;
+    return 'oficial';
   }
 }
 
-function primeiroNome(c) {
-  return (c?.nome || '').split(/\s+/)[0] || 'Candidato';
+// Viradas: troca do sinal de (x - 50) entre pontos consecutivos, ignorando empate exato.
+function detectarViradas(dados) {
+  const viradas = [];
+  let ant = null;
+  dados.forEach((d) => {
+    const s = Math.sign(d.c0 - 50);
+    if (s === 0) return;
+    if (ant && Math.sign(ant.c0 - 50) !== s) {
+      const frac = (50 - ant.c0) / (d.c0 - ant.c0);
+      viradas.push({
+        t: ant.t + (d.t - ant.t) * frac,
+        pct: isNum(ant.pct) && isNum(d.pct) ? ant.pct + (d.pct - ant.pct) * frac : d.pct,
+        lider: s > 0 ? 0 : 1,
+      });
+    }
+    ant = d;
+  });
+  return viradas;
 }
 
-function Amostra({ linha }) {
-  return (
-    <svg width="18" height="6" aria-hidden="true" className="shrink-0">
-      <line x1="0" y1="3" x2="18" y2="3" stroke={linha.cor} strokeWidth={linha.largura} strokeDasharray={linha.tracejado} />
-    </svg>
-  );
-}
-
-function DicaGrafico({ active, payload, linhas, candidatos, cores }) {
+function DicaGrafico({ active, payload, candidatos, cores, fonteLabel }) {
   if (!active || !payload || !payload.length) return null;
   const p = payload[0].payload;
+  const lider = p.c0 > p.c1 ? 0 : p.c1 > p.c0 ? 1 : null;
   return (
-    <div className="min-w-[13rem] rounded-xl bg-slate-950/95 px-3 py-2 text-xs shadow-xl ring-1 ring-white/15">
+    <div className="min-w-[12.5rem] rounded-xl bg-slate-950/95 px-3 py-2 text-xs shadow-xl ring-1 ring-white/15">
       <p className="font-semibold text-slate-200 tabular-nums">
         {fmtHora(p.t, false)} · {fmtDec(p.pct)}% apurado
       </p>
-      <div className="mt-1.5 grid grid-cols-[1fr_auto_auto] items-center gap-x-3 gap-y-1 tabular-nums">
-        <span />
-        <span className="text-right text-[10px] font-bold uppercase" style={{ color: clarear(cores[0], 0.3) }}>{primeiroNome(candidatos[0])}</span>
-        <span className="text-right text-[10px] font-bold uppercase" style={{ color: clarear(cores[1], 0.3) }}>{primeiroNome(candidatos[1])}</span>
-        {linhas.map((l) => (
-          <React.Fragment key={l.key}>
-            <span className="flex items-center gap-1.5 text-slate-400"><Amostra linha={l} />{l.nome}</span>
-            <span className="text-right font-bold text-white">{fmtPct(p[l.key])}</span>
-            <span className="text-right text-slate-300">{isNum(p[l.key]) ? fmtPct(100 - p[l.key]) : '—'}</span>
-          </React.Fragment>
+      <p className="text-[10px] uppercase tracking-wider text-slate-500">{fonteLabel}</p>
+      <div className="mt-1.5 space-y-1">
+        {[0, 1].map((i) => (
+          <div
+            key={i}
+            className={`flex items-center justify-between gap-3 rounded-md px-1.5 py-0.5 tabular-nums ${lider === i ? 'bg-white/10' : ''}`}
+          >
+            <span className="flex min-w-0 items-center gap-1.5">
+              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: cores[i] }} />
+              <span className={`truncate ${lider === i ? 'font-bold text-white' : 'text-slate-300'}`}>{candidatos[i]?.nome || `Candidato ${i + 1}`}</span>
+            </span>
+            <span className={lider === i ? 'font-black' : 'font-semibold'} style={{ color: clarear(cores[i], 0.3) }}>
+              {fmtPct(i === 0 ? p.c0 : p.c1)}
+            </span>
+          </div>
         ))}
       </div>
     </div>
   );
 }
 
-// Evolução do % do candidato 0 (oficial, M1, M2) com referência em 50% e filtro de linhas.
+// Evolução do % de cada finalista (entre os dois) com detecção de virada.
 export default function EvolutionChart({
   race, historicoLocal, modo, ciclo, titulo, seletor = null, altura = 260,
 }) {
   const [eixo, setEixo] = useState('hora');
-  const [visiveis, setVisiveis] = useState(lerLinhas);
-  const { serie, fonte } = useHistoricoServidor(race, { modo, ciclo, historicoLocal });
+  const [fonte, setFonte] = useState(lerFonte);
+  const { serie, fonte: origem } = useHistoricoServidor(race, { modo, ciclo, historicoLocal });
   const candidatos = candidatosDe(race);
   const cores = coresCorrida(race);
+  const fonteAtual = FONTES.find((f) => f.valor === fonte) || FONTES[0];
 
   useEffect(() => {
     try {
-      window.localStorage.setItem(CHAVE_LINHAS, JSON.stringify(visiveis));
+      window.localStorage.setItem(CHAVE_FONTE, fonte);
     } catch {
       // sem localStorage: a escolha vale só nesta visita
     }
-  }, [visiveis]);
-
-  const linhasVisiveis = LINHAS.filter((l) => visiveis[l.key]);
-  const qtdLigadas = linhasVisiveis.length;
-
-  const alternar = (key) => {
-    setVisiveis((v) => {
-      const ligadas = Object.values(v).filter(Boolean).length;
-      if (v[key] && ligadas <= 1) return v; // a última linha não desliga
-      return { ...v, [key]: !v[key] };
-    });
-  };
+  }, [fonte]);
 
   const dados = useMemo(() => serie
-    .map((p) => ({ t: p[0], pct: p[1], oficial: p[2], m1: p[3], m2: p[4] })), [serie]);
+    .filter((p) => isNum(p[fonteAtual.idx]))
+    .map((p) => ({ t: p[0], pct: p[1], c0: p[fonteAtual.idx], c1: Math.round((100 - p[fonteAtual.idx]) * 100) / 100 })), [serie, fonteAtual]);
+
+  const viradas = useMemo(() => detectarViradas(dados), [dados]);
 
   const dominio = useMemo(() => {
-    const vals = [50];
-    dados.forEach((d) => LINHAS.forEach((l) => visiveis[l.key] && isNum(d[l.key]) && vals.push(d[l.key])));
-    const min = Math.max(0, Math.floor(Math.min(...vals) - 1));
-    const max = Math.min(100, Math.ceil(Math.max(...vals) + 1));
-    return [min, max];
-  }, [dados, visiveis]);
+    let d = 0;
+    dados.forEach((p) => {
+      d = Math.max(d, Math.abs(p.c0 - 50));
+    });
+    const meia = Math.min(50, Math.max(2, Math.ceil(d + 1)));
+    return [50 - meia, 50 + meia];
+  }, [dados]);
 
-  const nome = candidatos[0]?.nome || 'candidato';
+  const nome = (i) => candidatos[i]?.nome || `Candidato ${i + 1}`;
+
+  let resumo = null;
+  if (dados.length) {
+    const ultima = viradas[viradas.length - 1];
+    if (ultima) {
+      resumo = (
+        <>
+          <strong className="text-white">Virada às {fmtHora(ultima.t, false)}:</strong>{' '}
+          <span style={{ color: clarear(cores[ultima.lider], 0.3) }} className="font-bold">{nome(ultima.lider)}</span> passa à frente
+          {viradas.length > 1 && <span className="text-slate-500"> · {viradas.length} viradas no total</span>}
+        </>
+      );
+    } else {
+      const s = dados.map((p) => Math.sign(p.c0 - 50)).find((x) => x !== 0);
+      resumo = s == null ? (
+        <>Empate até agora.</>
+      ) : (
+        <>
+          <strong className="text-white">Sem virada até agora:</strong>{' '}
+          <span style={{ color: clarear(cores[s > 0 ? 0 : 1], 0.3) }} className="font-bold">{nome(s > 0 ? 0 : 1)}</span> lidera desde o início
+        </>
+      );
+    }
+  }
+
+  const xVirada = (v) => (eixo === 'hora' ? v.t : v.pct);
+  const rotular = new Set(viradas.slice(-3)); // só as 3 últimas ganham rótulo, para não embolar
 
   return (
     <section className="min-w-0 rounded-2xl border border-white/10 bg-slate-900/70 p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Evolução da apuração</p>
-          <h3 className="truncate text-base sm:text-lg font-black text-white">{titulo || `% de ${nome}`}</h3>
-          <p className="text-xs text-slate-400">% de {nome} entre os dois finalistas · acima de 50% = à frente</p>
+          <h3 className="truncate text-base sm:text-lg font-black text-white">{titulo || 'Evolução'}</h3>
+          <p className="text-xs text-slate-400">% de cada finalista entre os dois · a linha de 50% marca a liderança</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {seletor}
@@ -130,47 +163,47 @@ export default function EvolutionChart({
         </div>
       </div>
 
-      {/* Filtro de linhas */}
-      <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Linhas exibidas no gráfico">
-        {LINHAS.map((l) => {
-          const ligada = visiveis[l.key];
-          const travada = ligada && qtdLigadas <= 1;
+      {/* Fonte das linhas (escolha única) */}
+      <div className="mt-3 flex w-full rounded-xl bg-slate-950/60 p-1 ring-1 ring-white/10 sm:inline-flex sm:w-auto" role="radiogroup" aria-label="Fonte das linhas do gráfico">
+        {FONTES.map((f) => {
+          const ativo = f.valor === fonte;
           return (
             <button
-              key={l.key}
+              key={f.valor}
               type="button"
-              onClick={() => alternar(l.key)}
-              aria-pressed={ligada}
-              aria-disabled={travada || undefined}
-              title={travada ? 'Pelo menos uma linha precisa ficar visível' : ligada ? `Ocultar ${l.nome}` : `Mostrar ${l.nome}`}
-              className={`inline-flex min-h-10 items-center gap-2 rounded-full px-3.5 text-xs sm:text-sm font-semibold ring-1 transition-colors ${ligada ? 'bg-white/10 text-white' : 'bg-transparent text-slate-500 ring-white/10 hover:text-slate-300'} ${travada ? 'cursor-not-allowed' : ''}`}
-              style={ligada ? { boxShadow: `inset 0 0 0 1.5px ${l.cor}99` } : undefined}
+              role="radio"
+              aria-checked={ativo}
+              onClick={() => setFonte(f.valor)}
+              className={`min-h-10 flex-1 whitespace-nowrap rounded-lg px-2 text-xs font-semibold transition-colors sm:flex-none sm:px-4 sm:text-sm ${ativo ? 'bg-white text-slate-950 shadow' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
             >
-              <span
-                className="h-2.5 w-2.5 shrink-0 rounded-full"
-                style={{ background: ligada ? l.cor : 'transparent', border: `2px solid ${l.cor}` }}
-                aria-hidden="true"
-              />
-              {l.nome}
+              {f.label}
             </button>
           );
         })}
       </div>
 
+      {resumo && (
+        <p className="mt-3 flex items-start gap-2 text-sm text-slate-300">
+          <ArrowLeftRight className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+          <span>{resumo}</span>
+        </p>
+      )}
+
       {dados.length === 0 ? (
         <div className="mt-4 flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/10 px-4 py-10 text-center" style={{ minHeight: altura - 40 }}>
           <IconeGrafico className="w-7 h-7 text-slate-600" />
           <p className="max-w-sm text-sm text-slate-400">
-            O gráfico começa a ser desenhado quando a apuração começar, às 17h. A partir daí, a curva completa fica
-            disponível para quem abrir a página, com um ponto por minuto.
+            {serie.length > 0 && fonte === 'oficial'
+              ? 'Ainda não há votos apurados nesta corrida. Troque para Métrica 1 ou Métrica 2 para ver as projeções.'
+              : 'O gráfico começa a ser desenhado quando a apuração começar, às 17h. A partir daí, a curva completa fica disponível para quem abrir a página, com um ponto por minuto.'}
           </p>
         </div>
       ) : (
         <>
           <div className="mt-3 -ml-2" style={{ height: altura }}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={dados} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
-                <CartesianGrid stroke="rgba(148,163,184,0.12)" vertical={false} />
+              <LineChart data={dados} margin={{ top: 18, right: 12, bottom: 0, left: 0 }}>
+                <CartesianGrid stroke="rgba(148,163,184,0.10)" vertical={false} />
                 <XAxis
                   dataKey={eixo === 'hora' ? 't' : 'pct'}
                   type="number"
@@ -190,38 +223,69 @@ export default function EvolutionChart({
                   axisLine={false}
                   width={44}
                   allowDecimals={false}
+                  allowDataOverflow
                 />
-                <ReferenceLine y={50} stroke="#f8fafc" strokeOpacity={0.6} strokeDasharray="2 3" label={{ value: '50%', position: 'insideTopRight', fill: '#cbd5e1', fontSize: 10 }} />
+                <ReferenceLine y={50} stroke="#f8fafc" strokeOpacity={0.35} strokeDasharray="2 3" />
+                {viradas.map((v, i) => (
+                  <ReferenceLine
+                    key={`vl-${i}`}
+                    x={xVirada(v)}
+                    stroke="#f8fafc"
+                    strokeOpacity={0.3}
+                    strokeDasharray="3 3"
+                    label={rotular.has(v) ? {
+                      value: `Virada ${fmtHora(v.t, false)}`, position: 'top', fill: '#e2e8f0', fontSize: 10, fontWeight: 700,
+                    } : undefined}
+                  />
+                ))}
                 <Tooltip
-                  content={<DicaGrafico linhas={linhasVisiveis} candidatos={candidatos} cores={cores} />}
+                  content={<DicaGrafico candidatos={candidatos} cores={cores} fonteLabel={fonteAtual.label} />}
                   cursor={{ stroke: 'rgba(148,163,184,0.35)' }}
                 />
-                {linhasVisiveis.map((l) => (
+                {[0, 1].map((i) => (
                   <Line
-                    key={l.key}
+                    key={i}
                     type="monotone"
-                    dataKey={l.key}
-                    name={l.nome}
-                    stroke={l.cor}
-                    strokeWidth={l.largura}
-                    strokeDasharray={l.tracejado}
-                    dot={dados.length < 3 ? { r: 3 } : false}
+                    dataKey={i === 0 ? 'c0' : 'c1'}
+                    name={nome(i)}
+                    stroke={cores[i]}
+                    strokeWidth={2.5}
+                    dot={dados.length < 3 ? { r: 3, fill: cores[i] } : false}
                     activeDot={{ r: 4 }}
-                    connectNulls
                     isAnimationActive={false}
+                  />
+                ))}
+                {viradas.map((v, i) => (
+                  <ReferenceDot
+                    key={`vd-${i}`}
+                    x={xVirada(v)}
+                    y={50}
+                    r={5}
+                    fill="#0f172a"
+                    stroke="#f8fafc"
+                    strokeWidth={2}
                   />
                 ))}
               </LineChart>
             </ResponsiveContainer>
           </div>
-          <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-[11px] text-slate-500">
-            <span className="inline-flex items-center gap-1.5">
-              <svg width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" stroke="#f8fafc" strokeOpacity="0.6" strokeDasharray="2 3" /></svg>
-              50% · linha tracejada branca
-            </span>
-            <span>
-              Atualizado minuto a minuto
-              {fonte === 'local' ? ' · histórico deste navegador' : fonte === 'mock' ? ' · histórico simulado (mock)' : ''}
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 text-[11px] text-slate-400">
+            <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
+              {[0, 1].map((i) => (
+                <span key={i} className="inline-flex min-w-0 items-center gap-1.5">
+                  <span className="h-0.5 w-4 shrink-0 rounded" style={{ background: cores[i] }} />
+                  <span className="truncate font-semibold" style={{ color: clarear(cores[i], 0.3) }}>{nome(i)}</span>
+                </span>
+              ))}
+              {viradas.length > 0 && (
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full border-2 border-slate-100 bg-slate-900" /> virada
+                </span>
+              )}
+            </div>
+            <span className="text-slate-500">
+              {fonteAtual.label} · Atualizado minuto a minuto
+              {origem === 'local' ? ' · histórico deste navegador' : origem === 'mock' ? ' · histórico simulado (mock)' : ''}
             </span>
           </div>
         </>
