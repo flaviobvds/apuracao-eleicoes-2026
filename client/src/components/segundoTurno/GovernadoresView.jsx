@@ -3,7 +3,7 @@ import { Maximize2 } from 'lucide-react';
 import RaceScoreboard from './RaceScoreboard';
 import EvolutionChart from './EvolutionChart';
 import MunicipiosZonas from './MunicipiosZonas';
-import { candidatosDe, nomeUf } from './utils';
+import { nomeUf } from './utils';
 
 // Aba "Governadores": 6 corridas com o placar de três linhas + evolução da corrida selecionada.
 export default function GovernadoresView({ corridas, data, now, historico, modo, ciclo, onComoCalculamos, onAbrir }) {
@@ -49,8 +49,10 @@ export default function GovernadoresView({ corridas, data, now, historico, modo,
 
       {atual && (
         <EvolutionChart
-          serie={historico?.[atual.id]}
-          candidato={candidatosDe(atual)[0]}
+          race={atual}
+          historicoLocal={historico?.[atual.id]}
+          modo={modo}
+          ciclo={ciclo}
           titulo={`Governador · ${nomeUf(atual.uf, atual.nome)}`}
           seletor={(
             <select

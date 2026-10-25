@@ -257,6 +257,42 @@ export function buildMockSegundoTurno({ pct = 40, now = Date.now() } = {}) {
   };
 }
 
+// Histórico sintético minuto a minuto desde as 17:00 de Brasília (20:00 UTC), terminando nos valores atuais da corrida.
+// pctSecoes sobe; oficial começa longe e converge; M1 e M2 são mais estáveis.
+export function buildMockHistorico(race, now = Date.now()) {
+  const MIN = 60000;
+  const pctAtual = race?.apuracao?.pctSecoes;
+  const cands = Array.isArray(race?.candidatos) ? race.candidatos : [];
+  if (!race?.id || !(pctAtual > 0) || cands.length < 2) return [];
+  const val = (k) => {
+    const v = race[k]?.[cands[0].numero]?.pct;
+    return typeof v === 'number' ? v : null;
+  };
+  const fim = { of: val('oficial'), m1: val('metrica1'), m2: val('metrica2') };
+  const d = new Date(now);
+  let inicio = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 20, 0, 0);
+  if (inicio > now) inicio -= 24 * 3600 * 1000;
+  // fora do horário da apuração (teste de tarde, por ex.), simula as últimas 2 h
+  if (now - inicio < 30 * MIN || now - inicio > 10 * 3600 * 1000) inicio = now - 120 * MIN;
+  const total = Math.max(2, Math.floor((now - inicio) / MIN));
+  const rand = rng(`hist-${race.id}`);
+  const offOf = (rand() < 0.5 ? -1 : 1) * (3 + rand() * 5);
+  const offM = (rand() - 0.5) * 2.5;
+  const norm = (x, k) => (Math.exp(-k * x) - Math.exp(-k)) / (1 - Math.exp(-k));
+  const pts = [];
+  for (let i = 0; i < total; i++) {
+    const f = (i + 1) / total;
+    const pct = pctAtual * (1 - Math.exp(-2.5 * f)) / (1 - Math.exp(-2.5));
+    const decai = norm(f, 4);
+    const ruido = () => (rand() - 0.5);
+    const of = fim.of != null ? clamp(fim.of + offOf * decai + ruido() * 1.6 * (1 - f), 1, 99) : null;
+    const m1 = fim.m1 != null ? clamp(fim.m1 + offM * 0.4 * decai + ruido() * 0.15, 1, 99) : null;
+    const m2 = fim.m2 != null ? clamp(fim.m2 + offM * decai + ruido() * 0.3 * (1 - f), 1, 99) : null;
+    pts.push([inicio + i * MIN, r2(Math.min(pct, pctAtual)), of != null ? r2(of) : null, m1 != null ? r2(m1) : null, m2 != null ? r2(m2) : null]);
+  }
+  return pts;
+}
+
 export function buildMockIndice() {
   const ufs = UFS.map(([uf]) => ({ uf, nome: UF_NOMES[uf] }));
   const municipios = UFS.flatMap(([uf]) => municipiosDaUf(uf).map((m) => ({

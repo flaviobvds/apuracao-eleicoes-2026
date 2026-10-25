@@ -11,7 +11,7 @@ import UfGrid from './UfGrid';
 import GovernadoresView from './GovernadoresView';
 import RaceModal from './RaceModal';
 import MetodologiaModal from './MetodologiaModal';
-import { candidatosDe, nomeUf } from './utils';
+import { nomeUf } from './utils';
 
 function Esqueleto() {
   return (
@@ -145,8 +145,10 @@ export default function SegundoTurnoPage({ onStatus }) {
 
               {corridaGrafico && (
                 <EvolutionChart
-                  serie={historico?.[corridaGrafico.id]}
-                  candidato={candidatosDe(corridaGrafico)[0]}
+                  race={corridaGrafico}
+                  historicoLocal={historico?.[corridaGrafico.id]}
+                  modo={modo}
+                  ciclo={ciclo}
                   titulo={`Presidente · ${nomeUf(corridaGrafico.uf, corridaGrafico.nome)}`}
                   seletor={opcoesGrafico.length > 1 ? (
                     <select

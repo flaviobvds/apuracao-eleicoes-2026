@@ -3,7 +3,7 @@ import Modal from './Modal';
 import RaceScoreboard from './RaceScoreboard';
 import EvolutionChart from './EvolutionChart';
 import MunicipiosZonas from './MunicipiosZonas';
-import { candidatosDe, nomeUf } from './utils';
+import { nomeUf } from './utils';
 
 // Detalhe de uma corrida (UF do Presidente ou Governador) em modal.
 export default function RaceModal({
@@ -38,8 +38,10 @@ export default function RaceModal({
             />
           </RaceScoreboard>
           <EvolutionChart
-            serie={historico?.[race.id]}
-            candidato={candidatosDe(race)[0]}
+            race={race}
+            historicoLocal={historico?.[race.id]}
+            modo={modo}
+            ciclo={ciclo}
             titulo={`Evolução · ${nomeUf(race.uf, race.nome)}`}
             altura={220}
           />

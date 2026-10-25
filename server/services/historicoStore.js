@@ -6,8 +6,18 @@
  * Sem as variáveis de ambiente do Redis, tudo vira no-op e o site segue com o histórico local do navegador.
  */
 
-const URL_REDIS = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-const TOKEN_REDIS = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+// A integração da Vercel cria <PREFIXO>_REST_API_URL / <PREFIXO>_REST_API_TOKEN (prefixo escolhido na instalação)
+function credenciais() {
+  const env = process.env;
+  if (env.KV_REST_API_URL && env.KV_REST_API_TOKEN) return [env.KV_REST_API_URL, env.KV_REST_API_TOKEN];
+  if (env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN) return [env.UPSTASH_REDIS_REST_URL, env.UPSTASH_REDIS_REST_TOKEN];
+  for (const chave of Object.keys(env)) {
+    const m = chave.match(/^(.*)_REST_API_URL$/);
+    if (m && env[`${m[1]}_REST_API_TOKEN`]) return [env[chave], env[`${m[1]}_REST_API_TOKEN`]];
+  }
+  return [null, null];
+}
+const [URL_REDIS, TOKEN_REDIS] = credenciais();
 const PREFIXO = 'st2026:hist:';
 
 const disponivel = () => !!(URL_REDIS && TOKEN_REDIS);
