@@ -5,7 +5,22 @@ Aplicação web interativa para acompanhamento em tempo real da apuração das *
 > 🌐 **Aplicação Online no Vercel**:  
 > 👉 **[https://projecao-eleicoes-2026.vercel.app/](https://projecao-eleicoes-2026.vercel.app/)**  
 > 👥 **Acesso Direto à Página de Deputados**:  
-> 👉 **[https://projecao-eleicoes-2026.vercel.app/deputados](https://projecao-eleicoes-2026.vercel.app/deputados)**
+> 👉 **[https://projecao-eleicoes-2026.vercel.app/deputados](https://projecao-eleicoes-2026.vercel.app/deputados)**  
+> 🗳️ **Segundo Turno (presidente e governadores)**:  
+> 👉 **[https://projecao-eleicoes-2026.vercel.app/segundo-turno](https://projecao-eleicoes-2026.vercel.app/segundo-turno)**
+
+## Segundo turno (25/10/2026)
+
+A página `/segundo-turno` mostra o apurado oficial e duas projeções para 100% das urnas, calculadas em 6.292 pares município × zona eleitoral (presidente) e 513 pares (governador em AC, AM, DF, ES, RN e TO):
+
+- **Métrica 1 (proporção do 1º turno)**: votos já apurados entram como reais; o que falta em cada par é dividido pela proporção entre os dois finalistas no 1º turno daquele par.
+- **Métrica 2 (tempo real)**: o que falta em cada par é dividido por uma mistura entre o resultado já apurado no par e a proporção do 1º turno corrigida pelo swing observado na UF.
+
+Peças principais:
+- `server/scripts/baixarPrimeiroTurno.js`: baixa o 1º turno por par município × zona para `server/data/segundoTurno/`.
+- `server/services/segundoTurnoService.js`: leitura incremental da API do TSE (arquivos de abrangência por UF, no máximo 3.000 pares e 32 conexões por ciclo).
+- `server/services/segundoTurnoProjecao.js`: cálculo das métricas.
+- Rotas: `/api/segundo-turno`, `/api/segundo-turno/uf/:uf?cargo=presidente|governador`, `/api/segundo-turno/indice`. Use `?simular=NN` para dados sintéticos com NN% apurado.
 
 A plataforma oferece duas frentes principais:
 1. **Presidente da República**: Foco na dinâmica de **Urnas Apuradas vs. Restantes** e na **Projeção Matemática a 100% dos Votos Válidos**.
