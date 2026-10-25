@@ -16,9 +16,11 @@ const T1_GOVERNADOR = require('../data/segundoTurno/primeiroTurnoGovernador.json
 const BASE = 'https://resultados.tse.jus.br/oficial/ele2026';
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) TSE-Apuracao-2026/1.0';
 const INICIO_APURACAO = '2026-10-25T20:00:00.000Z'; // 17h de Brasília
-const CONCORRENCIA = 64;
+// Acima de ~100 conexões simultâneas o TSE responde 429 para o IP inteiro (testado da Vercel em 25/10)
+const CONCORRENCIA = 32;
+const ESPERA_APOS_429_MS = 30000;
 const PRAZO_ATUALIZACAO_MS = 35000;
-const VALIDADE_SNAPSHOT_MS = 10000;
+const VALIDADE_SNAPSHOT_MS = 20000;
 const VALIDADE_UF_MS = 20000;
 
 const NOMES_UF = {
@@ -102,16 +104,22 @@ async function comVaga(fn) {
 }
 
 const PULADO = Symbol('pulado');
+let bloqueadoAte = 0;
 
 /** Busca um JSON do TSE (null em 404). Com `prazo`, devolve PULADO se a vaga só abrir depois dele. */
 async function getJson(url, prazo) {
   return comVaga(async () => {
-    if (prazo && Date.now() > prazo) return PULADO;
+    // Pares são opcionais num ciclo: depois de um 429 do TSE, ficam para o próximo ciclo
+    if (prazo && (Date.now() > prazo || Date.now() < bloqueadoAte)) return PULADO;
     let erro;
     for (let tentativa = 0; tentativa < 2; tentativa++) {
       try {
         const r = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'application/json' }, signal: AbortSignal.timeout(10000) });
         if (r.status === 404) return null;
+        if (r.status === 429) {
+          bloqueadoAte = Date.now() + ESPERA_APOS_429_MS;
+          throw new Error('HTTP 429');
+        }
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return await r.json();
       } catch (e) {

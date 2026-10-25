@@ -210,25 +210,6 @@ app.get('/api/segundo-turno/uf/:uf', async (req, res) => {
   }
 });
 
-// TEMPORÁRIO: mede a vazão de leitura do TSE a partir da região da função (remover após o teste)
-app.get('/api/segundo-turno/teste-vazao', async (req, res) => {
-  const pres = require('./data/segundoTurno/primeiroTurnoPresidente.json');
-  const n = Math.min(2000, Number(req.query.n) || 600), conc = Math.min(256, Number(req.query.c) || 64), ele = req.query.ele === '6258' ? '6258' : '6257';
-  const urls = Object.values(pres.pares).slice(0, n).map(p =>
-    `https://resultados.tse.jus.br/oficial/ele2026/${ele}/dados/${p.uf}/${p.uf}${p.mun}-z${p.z}-c0001-e00${ele}-u.json`);
-  const inicio = Date.now();
-  let ok = 0, falhas = 0, i = 0;
-  await Promise.all(Array.from({ length: conc }, async () => {
-    while (i < urls.length) {
-      const url = urls[i++];
-      try { const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 TSE-Apuracao-2026/1.0' } }); await r.arrayBuffer(); r.ok ? ok++ : falhas++; } catch { falhas++; }
-    }
-  }));
-  const ms = Date.now() - inicio;
-  res.set('Cache-Control', 'no-store');
-  res.json({ ok, falhas, ms, reqPorSeg: Math.round((ok + falhas) / (ms / 1000)), regiao: process.env.VERCEL_REGION || null });
-});
-
 const clientDistPath = path.join(__dirname, '../client/dist');
 app.use(express.static(clientDistPath));
 
