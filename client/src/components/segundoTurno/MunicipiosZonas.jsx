@@ -39,7 +39,7 @@ function MiniBarra({ pct, cores }) {
 function Dif({ v, cores }) {
   if (!isNum(v)) return <span className="text-slate-500">—</span>;
   const cor = v > 0 ? clarear(cores[0], 0.3) : v < 0 ? clarear(cores[1], 0.3) : '#cbd5e1';
-  return <span className="font-bold tabular-nums" style={{ color: cor }}>{fmtPp(v, 2, true)}</span>;
+  return <span className="whitespace-nowrap font-bold tabular-nums" style={{ color: cor }}>{fmtPp(v, 2, true)}</span>;
 }
 
 function NomeLinha({ l, modoZonas }) {
@@ -271,17 +271,18 @@ export default function MunicipiosZonas({ race, cargo, modo, ciclo, filtroInicia
           )}
 
           {visiveis.length > 0 && (
-            <>
-              {/* Desktop: tabela */}
-              <div className="hidden lg:block overflow-hidden rounded-xl ring-1 ring-white/10">
+            // A tabela depende da largura do próprio bloco (modal, cartão), não da tela: abaixo de 36rem viram cartões
+            <div className="@container space-y-3">
+              {/* Bloco largo: tabela */}
+              <div className="hidden @xl:block overflow-hidden rounded-xl ring-1 ring-white/10">
                 <table className="w-full table-fixed text-sm">
                   <thead className="bg-white/[0.03] text-[11px] uppercase tracking-wider text-slate-400">
                     <tr>
-                      <th className="w-[34%] px-3 py-2 text-left font-semibold">{tipo === 'zonas' ? 'Município · zona' : 'Município'}</th>
-                      <th className="w-[13%] px-2 py-2 text-right font-semibold">Eleitorado</th>
-                      <th className="w-[17%] px-2 py-2 text-left font-semibold">1º turno</th>
-                      <th className="w-[17%] px-2 py-2 text-left font-semibold">2º turno</th>
-                      <th className="w-[11%] px-2 py-2 text-right font-semibold">Dif.</th>
+                      <th className="w-[30%] px-3 py-2 text-left font-semibold">{tipo === 'zonas' ? 'Município · zona' : 'Município'}</th>
+                      <th className="w-[12%] px-2 py-2 text-right font-semibold">Eleitorado</th>
+                      <th className="w-[20%] px-2 py-2 text-left font-semibold">1º turno</th>
+                      <th className="w-[20%] px-2 py-2 text-left font-semibold">2º turno</th>
+                      <th className="w-[10%] px-2 py-2 text-right font-semibold">Dif.</th>
                       <th className="w-[8%] px-3 py-2 text-right font-semibold">Apur.</th>
                     </tr>
                   </thead>
@@ -300,8 +301,8 @@ export default function MunicipiosZonas({ race, cargo, modo, ciclo, filtroInicia
                 </table>
               </div>
 
-              {/* Celular/tablet: cartões */}
-              <ul className="space-y-2 lg:hidden">
+              {/* Bloco estreito (celular, modal): cartões */}
+              <ul className="space-y-2 @xl:hidden">
                 {visiveis.map((l) => (
                   <li key={l.id} className={`rounded-xl p-3 ring-1 ${l.id === alvo ? 'bg-indigo-500/15 ring-indigo-400/40' : 'bg-slate-950/40 ring-white/10'}`}>
                     <div className="flex items-start justify-between gap-2">
@@ -329,7 +330,7 @@ export default function MunicipiosZonas({ race, cargo, modo, ciclo, filtroInicia
                   Mostrar mais ({fmtNum(Math.min(PAGINA, filtradas.length - visiveis.length))} de {fmtNum(filtradas.length - visiveis.length)} restantes)
                 </button>
               )}
-            </>
+            </div>
           )}
         </div>
       )}
