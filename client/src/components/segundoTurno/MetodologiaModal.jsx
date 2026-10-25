@@ -33,7 +33,7 @@ function Lista({ itens }) {
 
 export default function MetodologiaModal({ aberto, onFechar }) {
   return (
-    <Modal aberto={aberto} onFechar={onFechar} titulo="Como calculamos" subtitulo="As duas métricas de projeção do 2º turno" lado="direita">
+    <Modal aberto={aberto} onFechar={onFechar} titulo="Como calculamos" subtitulo="As duas métricas de projeção do 2º turno" largura="max-w-2xl">
       <div className="space-y-7 pb-6">
         <Secao titulo="Unidade de cálculo" cor="text-slate-200">
           <p>
