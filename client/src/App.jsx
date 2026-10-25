@@ -5,7 +5,12 @@ import NationalScoreboard from './components/NationalScoreboard';
 import RegionView from './components/RegionView';
 import StateView from './components/StateView';
 import DeputadosView from './components/DeputadosView';
+import SegundoTurnoPage from './components/segundoTurno/SegundoTurnoPage';
 import { AlertCircle, RefreshCw } from 'lucide-react';
+
+function isSegundoTurno(value) {
+  return /segundo-?turno|2-?turno/.test(value);
+}
 
 function getPageFromLocation() {
   if (typeof window === 'undefined') return 'presidente';
@@ -14,6 +19,9 @@ function getPageFromLocation() {
   const pageParam = (search.get('page') || search.get('pagina') || '').toLowerCase();
   const hash = window.location.hash.toLowerCase();
 
+  if (isSegundoTurno(path) || isSegundoTurno(pageParam) || isSegundoTurno(hash)) {
+    return 'segundo-turno';
+  }
   if (path.includes('deputado') || pageParam.includes('deputado') || hash.includes('deputado')) {
     return 'deputados';
   }
@@ -40,7 +48,17 @@ export default function App() {
   const handlePageChange = (newPage) => {
     if (newPage === activePage) return;
     setActivePage(newPage);
-    if (newPage === 'deputados') {
+    if (newPage === 'segundo-turno') {
+      // preserva só os parâmetros de teste da página do 2º turno
+      const atual = new URLSearchParams(window.location.search);
+      const q = new URLSearchParams();
+      ['mock', 'simular'].forEach((k) => {
+        if (atual.get(k)) q.set(k, atual.get(k));
+      });
+      const qs = q.toString();
+      window.history.pushState({ page: 'segundo-turno' }, '', `/segundo-turno${qs ? `?${qs}` : ''}`);
+      window.scrollTo(0, 0);
+    } else if (newPage === 'deputados') {
       const search = window.location.search;
       window.history.pushState({ page: 'deputados' }, '', `/deputados${search}`);
     } else {
@@ -74,10 +92,14 @@ export default function App() {
     }
   }, []);
 
-  // Fetch inicial
+  // Status do 2º turno (para o selo "AO VIVO" no menu)
+  const [segundoTurnoStatus, setSegundoTurnoStatus] = useState(null);
+
+  // Fetch inicial (a página do 2º turno tem a sua própria API)
   useEffect(() => {
+    if (activePage === 'segundo-turno') return;
     fetchData();
-  }, [fetchData]);
+  }, [fetchData, activePage]);
 
   // Ciclo de contagem regressiva para Auto-Refresh
   useEffect(() => {
@@ -106,6 +128,30 @@ export default function App() {
     setCountdown(refreshInterval);
   };
 
+  if (activePage === 'segundo-turno') {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col overflow-x-clip">
+        <HeaderNav
+          activePage={activePage}
+          onChangePage={handlePageChange}
+          segundoTurnoStatus={segundoTurnoStatus}
+        />
+        <main className="flex-1 w-full">
+          <SegundoTurnoPage onStatus={setSegundoTurnoStatus} />
+        </main>
+        <footer className="bg-slate-900/90 border-t border-slate-800/80 py-6 text-xs text-slate-400 mt-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row md:items-center justify-between gap-2">
+            <p>
+              Fonte: API pública de divulgação de resultados do TSE (resultados.tse.jus.br). Projeções são estimativas
+              estatísticas, não resultados oficiais.
+            </p>
+            <span className="shrink-0 text-slate-500">Eleições Gerais 2026 • 2º turno</span>
+          </div>
+        </footer>
+      </div>
+    );
+  }
+
   if (loading && !data) {
     return (
       <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4">
@@ -124,6 +170,7 @@ export default function App() {
       <HeaderNav
         activePage={activePage}
         onChangePage={handlePageChange}
+        segundoTurnoStatus={segundoTurnoStatus}
         viewMode={viewMode}
         onChangeViewMode={(mode) => {
           setViewMode(mode);

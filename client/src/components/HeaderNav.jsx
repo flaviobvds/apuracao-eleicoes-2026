@@ -4,6 +4,7 @@ import { RefreshCw, Radio, Layers, MapPin, Vote, Users } from 'lucide-react';
 export default function HeaderNav({
   activePage = 'presidente',
   onChangePage,
+  segundoTurnoStatus = null,
   viewMode,
   onChangeViewMode,
   autoRefresh,
@@ -44,29 +45,52 @@ export default function HeaderNav({
             </div>
           </div>
 
-          {/* Abas Principais de Navegação: Presidente vs Deputados */}
-          <div className="flex items-center bg-slate-800/90 p-1 rounded-xl border border-slate-700/80 shadow-inner">
+          {/* Abas Principais de Navegação: Segundo Turno, Presidente (1º turno) e Deputados */}
+          <div className="flex w-full max-w-full items-center gap-0.5 overflow-x-auto bg-slate-800/90 p-1 rounded-xl border border-slate-700/80 shadow-inner lg:w-auto">
+            <button
+              onClick={() => onChangePage && onChangePage('segundo-turno')}
+              aria-current={activePage === 'segundo-turno' ? 'page' : undefined}
+              className={`flex min-h-10 shrink-0 items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                activePage === 'segundo-turno'
+                  ? 'bg-white text-slate-950 shadow-md'
+                  : 'text-white bg-gradient-to-r from-blue-600/30 to-red-600/30 ring-1 ring-white/15 hover:from-blue-600/50 hover:to-red-600/50'
+              }`}
+            >
+              Segundo Turno
+              {segundoTurnoStatus === 'apurando' ? (
+                <span className="flex items-center gap-1 rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-black text-white">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                  AO VIVO
+                </span>
+              ) : (
+                <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-black ${activePage === 'segundo-turno' ? 'bg-slate-950 text-white' : 'bg-amber-400 text-amber-950'}`}>
+                  2º turno
+                </span>
+              )}
+            </button>
             <button
               onClick={() => onChangePage && onChangePage('presidente')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+              className={`flex min-h-10 shrink-0 items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                 activePage === 'presidente'
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
                   : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
               }`}
             >
-              <Vote className="w-4 h-4" />
-              Presidente
+              <Vote className="w-4 h-4 hidden sm:block" />
+              <span className="sm:hidden">1º turno</span>
+              <span className="hidden sm:inline">Presidente 1º turno</span>
             </button>
             <button
               onClick={() => onChangePage && onChangePage('deputados')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+              className={`flex min-h-10 shrink-0 items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                 activePage === 'deputados'
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
                   : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
               }`}
             >
-              <Users className="w-4 h-4" />
-              Deputados (Câmara & Assembleias)
+              <Users className="w-4 h-4 hidden sm:block" />
+              <span className="sm:hidden">Deputados</span>
+              <span className="hidden sm:inline">Deputados (Câmara & Assembleias)</span>
             </button>
           </div>
 

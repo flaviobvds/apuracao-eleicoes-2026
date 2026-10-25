@@ -202,7 +202,7 @@ app.get('/api/segundo-turno/uf/:uf', async (req, res) => {
   try {
     const dados = await obterDetalheUf(req.params.uf, req.query.cargo, { simular: req.query.simular });
     if (!dados) return res.status(404).json({ success: false, error: 'UF ou cargo sem 2º turno' });
-    res.set('Cache-Control', lerSimulacao(req.query.simular) !== null ? 'public, max-age=0, s-maxage=300' : 'public, max-age=0, s-maxage=20, stale-while-revalidate=40');
+    res.set('Cache-Control', lerSimulacao(req.query.simular) !== null ? 'public, max-age=0, s-maxage=300' : 'public, max-age=0, s-maxage=60, stale-while-revalidate=120');
     res.json(dados);
   } catch (error) {
     console.error('Erro no detalhe do 2º turno:', error);

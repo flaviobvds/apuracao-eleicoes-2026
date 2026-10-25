@@ -11,6 +11,12 @@
   }
 }
 
+/* Campos de busca usam botão próprio de limpar */
+input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 /* Custom scrollbars */
 ::-webkit-scrollbar {
   width: 8px;

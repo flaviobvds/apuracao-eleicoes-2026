@@ -22,7 +22,7 @@ const ESPERA_APOS_429_MS = 30000;
 const MAX_PARES_POR_CICLO = 3000;
 const PRAZO_ATUALIZACAO_MS = 35000;
 const VALIDADE_SNAPSHOT_MS = 20000;
-const VALIDADE_UF_MS = 20000;
+const VALIDADE_UF_MS = 60000;
 
 const NOMES_UF = {
   ac: 'Acre', al: 'Alagoas', ap: 'Amapá', am: 'Amazonas', ba: 'Bahia', ce: 'Ceará', df: 'Distrito Federal',
