@@ -6,6 +6,7 @@ import RegionView from './components/RegionView';
 import StateView from './components/StateView';
 import DeputadosView from './components/DeputadosView';
 import SegundoTurnoPage from './components/segundoTurno/SegundoTurnoPage';
+import SobreDesenvolvedor from './components/SobreDesenvolvedor';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
 function isSegundoTurno(value) {
@@ -129,7 +130,10 @@ export default function App() {
               Fonte: API pública de divulgação de resultados do TSE (resultados.tse.jus.br). Projeções são estimativas
               estatísticas, não resultados oficiais.
             </p>
-            <span className="shrink-0 text-slate-500">Eleições Gerais 2026 • 2º turno</span>
+            <div className="flex shrink-0 items-center gap-3">
+              <span className="text-slate-500">Eleições Gerais 2026 • 2º turno</span>
+              <SobreDesenvolvedor />
+            </div>
           </div>
         </footer>
       </div>
@@ -228,8 +232,9 @@ export default function App() {
                 : 'Aplicação das regras do Código Eleitoral: Quociente Eleitoral (QE), Quociente Partidário (QP) e Sobras D\'Hondt.'}
             </p>
           </div>
-          <div className="text-right text-slate-400">
+          <div className="flex items-center gap-3 text-right text-slate-400">
             <span>Eleições Gerais 2026 • Dados Oficiais TSE</span>
+            <SobreDesenvolvedor />
           </div>
         </div>
       </footer>
